@@ -1,10 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"; repo_dir="$(cd "$script_dir/.." && pwd -P)"
-if rg -n --glob '!**/*_test.go' --glob '!scripts/run_no_network_acceptance.sh' \
-  '"net/http"|"net/rpc"|grpc\.Dial|net\.Dial|net\.Listen|http\.NewRequest|http\.Get' "$repo_dir/cmd" "$repo_dir/internal"; then
-  echo 'network-capable runtime source found' >&2; exit 1
-fi
+set +e
+git -C "$repo_dir" grep -n -E -I -e \
+  '"net/http"|"net/rpc"|grpc\.Dial|net\.Dial|net\.Listen|http\.NewRequest|http\.Get' -- \
+  cmd internal ':(exclude,glob)**/*_test.go'
+scan_status=$?
+set -e
+case "$scan_status" in
+  0) echo 'network-capable runtime source found' >&2; exit 1 ;;
+  1) ;;
+  *) echo "source scan failed with status $scan_status" >&2; exit "$scan_status" ;;
+esac
 task_base="${TMPDIR:-/tmp}"; task_base="${task_base%/}"; test_root="$(mktemp -d "$task_base/are-no-network.XXXXXX")"; pid=""
 cleanup(){ if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then kill -KILL "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true; fi; case "$test_root" in "$task_base"/are-no-network.*) find "$test_root" -depth -delete 2>/dev/null || true;; esac; }
 trap cleanup EXIT INT TERM
