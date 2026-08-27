@@ -11,7 +11,29 @@
     "task_id": {"type": "string", "minLength": 1, "maxLength": 256},
     "status": {"enum": ["NO_CANDIDATES_OBSERVED", "REVIEW_REQUIRED", "PARTIAL_EVIDENCE", "INTERRUPTED_TASK", "OBSERVATION_FAILED"]},
     "created_at": {"type": "string", "format": "date-time"},
-    "candidates": {"type": "array", "items": {"type": "object"}},
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "evidence_level", "current_status"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1, "maxLength": 256},
+          "kind": {"enum": ["file", "directory", "process", "port"]},
+          "path": {"type": "string"},
+          "object_identity": {"type": "string"},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "evidence_level": {"enum": ["BASELINE_OBSERVED", "RECEIPT_BOUND", "EVENT_BOUND", "INFERRED", "UNATTRIBUTED"]},
+          "current_status": {"enum": ["PRESENT", "ACTIVE_REFERENCE", "NO_LONGER_PRESENT", "CHANGED_SINCE_REPORT", "UNKNOWN"]},
+          "reason": {"type": "string"},
+          "recommendation": {"enum": ["review"]},
+          "event_ids": {"type": "array", "maxItems": 128, "items": {"type": "string", "minLength": 1, "maxLength": 256}},
+          "receipt_ids": {"type": "array", "maxItems": 128, "items": {"type": "string", "minLength": 1, "maxLength": 256}},
+          "limitations": {"type": "array", "items": {"type": "string"}},
+          "conflicts": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    },
     "limitations": {"type": "array", "items": {"type": "string"}}
   }
 }

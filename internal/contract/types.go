@@ -94,6 +94,8 @@ type Candidate struct {
 	CurrentStatus  CurrentStatus `json:"current_status"`
 	Reason         string        `json:"reason,omitempty"`
 	Recommendation string        `json:"recommendation,omitempty"`
+	EventIDs       []string      `json:"event_ids,omitempty"`
+	ReceiptIDs     []string      `json:"receipt_ids,omitempty"`
 	Limitations    []string      `json:"limitations,omitempty"`
 	Conflicts      []string      `json:"conflicts,omitempty"`
 }

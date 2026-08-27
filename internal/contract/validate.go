@@ -6,8 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"strings"
+	"regexp"
 )
+
+var commandFingerprintPattern = regexp.MustCompile(`^sha256:[0-9a-f]{64}$`)
 
 func DecodeTaskEvent(raw []byte) (TaskEvent, error) {
 	var event TaskEvent
@@ -53,8 +55,11 @@ func (e TaskEvent) Validate() error {
 	if len(e.WorkingDir) > 4096 || len(e.CommandFingerprint) > 256 || len(e.ReceiptID) > 256 {
 		return errors.New("event field exceeds size limit")
 	}
-	if e.CommandFingerprint != "" && !strings.HasPrefix(e.CommandFingerprint, "sha256:") {
+	if e.CommandFingerprint != "" && !commandFingerprintPattern.MatchString(e.CommandFingerprint) {
 		return errors.New("command_fingerprint must use sha256")
+	}
+	if e.Process != nil && (e.Process.PID <= 0 || e.Process.CreatedAt.IsZero()) {
+		return errors.New("process identity requires a positive pid and creation time")
 	}
 	if len(e.DeclaredOutputs) > 128 {
 		return errors.New("declared_outputs exceeds size limit")
@@ -79,6 +84,14 @@ func (c Candidate) Validate() error {
 	}
 	if c.SizeBytes < 0 {
 		return errors.New("size_bytes cannot be negative")
+	}
+	if len(c.EventIDs) > 128 || len(c.ReceiptIDs) > 128 {
+		return errors.New("candidate provenance exceeds size limit")
+	}
+	for _, id := range append(append([]string(nil), c.EventIDs...), c.ReceiptIDs...) {
+		if !validID(id) {
+			return errors.New("candidate provenance id is invalid")
+		}
 	}
 	return nil
 }
