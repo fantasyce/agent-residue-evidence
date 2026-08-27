@@ -84,7 +84,11 @@ func TestBeginEndGetVerifyRoundTrip(t *testing.T) {
 	}
 	var report contract.Report
 	decodeStructured(t, end.StructuredContent, &report)
-	if report.Status != contract.ReportReviewRequired {
+	wantStatus := contract.ReportReviewRequired
+	if len(report.Limitations) > 0 {
+		wantStatus = contract.ReportPartialEvidence
+	}
+	if report.Status != wantStatus {
 		t.Fatalf("report=%#v", report)
 	}
 	for _, tool := range []string{"get_residue_report", "verify_task_residue"} {

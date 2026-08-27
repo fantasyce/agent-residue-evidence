@@ -42,7 +42,12 @@ func TestCLIJSONLifecycle(t *testing.T) {
 		t.Fatalf("end=%d stdout=%s stderr=%s", code, stdout.String(), stderr.String())
 	}
 	var report contract.Report
-	if err := json.Unmarshal(stdout.Bytes(), &report); err != nil || report.Status != contract.ReportReviewRequired {
+	err := json.Unmarshal(stdout.Bytes(), &report)
+	wantStatus := contract.ReportReviewRequired
+	if len(report.Limitations) > 0 {
+		wantStatus = contract.ReportPartialEvidence
+	}
+	if err != nil || report.Status != wantStatus {
 		t.Fatalf("report=%#v err=%v", report, err)
 	}
 	code, stdout, stderr = invoke(t, []string{"report", "get"}, map[string]string{"report_id": report.ReportID})

@@ -24,6 +24,6 @@ The GitHub Actions matrix uses the official hosted labels `macos-15` (arm64),
 source gates separately. Failure artifacts contain only the sanitized summary;
 raw reports and private task roots are never uploaded.
 
-Local evidence on one host must be reported only for that host. Linux and
-Windows remain pending until their native matrix jobs succeed; macOS evidence
-does not stand in for them.
+Local evidence on one host must be reported only for that host. Release support
+requires successful native matrix jobs on macOS arm64, Linux amd64, and Windows
+amd64; evidence from one host never stands in for another.

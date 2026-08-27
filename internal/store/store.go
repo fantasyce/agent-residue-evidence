@@ -53,7 +53,7 @@ func Open(home string, options ...Option) (*Store, error) {
 		if err := os.MkdirAll(directory, 0o700); err != nil {
 			return nil, err
 		}
-		if err := os.Chmod(directory, 0o700); err != nil {
+		if err := protectPrivatePath(directory, true); err != nil {
 			return nil, err
 		}
 	}
@@ -297,7 +297,7 @@ func atomicWriteJSON(path string, value any) (returnErr error) {
 			_ = os.Remove(temporaryPath)
 		}
 	}()
-	if err := temporary.Chmod(0o600); err != nil {
+	if err := protectPrivatePath(temporaryPath, false); err != nil {
 		_ = temporary.Close()
 		return err
 	}
