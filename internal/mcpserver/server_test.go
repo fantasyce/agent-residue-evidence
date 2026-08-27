@@ -180,6 +180,36 @@ func TestPublicIdentifiersNeverAuthorizeCrossTaskOperations(t *testing.T) {
 	}
 }
 
+func TestExecutorHandleFieldCompletesMCPAppendRoundTrip(t *testing.T) {
+	root := t.TempDir()
+	client := testClient(t, testService(t))
+	begin, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: "begin_task_observation", Arguments: map[string]any{"task_id": "executor-mcp", "workspace": root}})
+	if err != nil || begin.IsError {
+		t.Fatalf("begin=%#v err=%v", begin, err)
+	}
+	var begun app.BeginResult
+	decodeStructured(t, begin.StructuredContent, &begun)
+	delegated, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: "delegate_task_executor", Arguments: map[string]any{
+		"owner_handle": begun.OwnerHandle, "expires_at": time.Now().Add(time.Minute),
+		"allowed_event_types": []any{"artifact_declared"}, "allowed_root_aliases": []any{"workspace://"},
+	}})
+	if err != nil || delegated.IsError {
+		t.Fatalf("delegate=%#v err=%v", delegated, err)
+	}
+	var output delegateOutput
+	decodeStructured(t, delegated.StructuredContent, &output)
+	result, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: "append_task_events", Arguments: map[string]any{
+		"executor_handle": output.ExecutorHandle,
+		"events": []any{map[string]any{
+			"schema_version": contract.EventSchemaVersion, "task_id": "executor-mcp", "event_id": "artifact-1",
+			"type": "artifact_declared", "timestamp": time.Now().UTC(), "working_directory": "workspace://", "declared_outputs": []any{"workspace://artifact.log"},
+		}},
+	}})
+	if err != nil || result.IsError {
+		t.Fatalf("executor append=%#v err=%v", result, err)
+	}
+}
+
 func TestEphemeralObservationStaysInSessionAndCannotResumeAfterRestart(t *testing.T) {
 	root := t.TempDir()
 	home := t.TempDir()

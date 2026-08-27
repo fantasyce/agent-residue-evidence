@@ -52,7 +52,11 @@ func TestEncryptedEnvelopeRejectsWrongKeyAndTampering(t *testing.T) {
 	if err := openRecord(envelope, wrong, new(map[string]string)); err == nil {
 		t.Fatal("wrong key decrypted record")
 	}
-	envelope.Ciphertext = envelope.Ciphertext[:len(envelope.Ciphertext)-1] + "A"
+	replacement := byte('A')
+	if envelope.Ciphertext[len(envelope.Ciphertext)-1] == replacement {
+		replacement = 'B'
+	}
+	envelope.Ciphertext = envelope.Ciphertext[:len(envelope.Ciphertext)-1] + string(replacement)
 	if err := openRecord(envelope, key, new(map[string]string)); err == nil {
 		t.Fatal("tampered record decrypted")
 	}

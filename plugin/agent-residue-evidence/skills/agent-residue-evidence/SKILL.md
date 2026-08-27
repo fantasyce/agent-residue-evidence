@@ -16,7 +16,9 @@ reports; it never cleans resources.
   Events, logs, reports, or messages to another task. Task, observation,
   report, and candidate IDs are references only and do not authorize access.
 - During a long task, optionally call `append_task_events` with safe generic
-  events or an empty event batch as a heartbeat. Send only fingerprints and
+  `agent-task-event/2.0` events or an empty event batch as a heartbeat. Use
+  `owner_handle` for the owner and `executor_handle` for a delegated producer.
+  Send only fingerprints and
   scoped paths. Never send command text, environment values, secrets, file
   contents, or conversation transcripts.
 - Before the task's final answer, call `end_task_observation`. Explain each

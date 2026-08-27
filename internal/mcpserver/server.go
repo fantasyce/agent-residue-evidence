@@ -20,7 +20,8 @@ type accessInput struct {
 
 type appendEventsInput struct {
 	accessInput
-	Events []contract.TaskEvent `json:"events" jsonschema:"safe generic task events; an empty array is a heartbeat"`
+	ExecutorHandle string               `json:"executor_handle,omitempty" jsonschema:"opaque append-only executor handle returned by delegate_task_executor"`
+	Events         []contract.TaskEvent `json:"events" jsonschema:"safe generic agent-task-event/2.0 events; an empty array is a heartbeat"`
 }
 
 type reportInput struct {
@@ -123,6 +124,12 @@ func New(service *app.Service) *mcp.Server {
 
 	mcp.AddTool(server, &mcp.Tool{Name: "append_task_events", Description: "Append safe events using owner, executor, or same-session ephemeral authority.", Annotations: mutating("Append task evidence events")}, func(ctx context.Context, request *mcp.CallToolRequest, input appendEventsInput) (*mcp.CallToolResult, appendEventsOutput, error) {
 		handle := input.OwnerHandle
+		if input.ExecutorHandle != "" {
+			if handle != "" || input.ObservationID != "" {
+				return nil, appendEventsOutput{}, capability.ErrAccessDenied
+			}
+			handle = input.ExecutorHandle
+		}
 		if handle == "" {
 			var err error
 			handle, err = sessions.resolve(request.Session, input.accessInput)

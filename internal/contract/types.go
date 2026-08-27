@@ -78,7 +78,7 @@ type PortIdentity struct {
 }
 
 type TaskEvent struct {
-	SchemaVersion      string           `json:"schema_version"`
+	SchemaVersion      string           `json:"schema_version" jsonschema:"must equal agent-task-event/2.0"`
 	TaskID             string           `json:"task_id"`
 	EventID            string           `json:"event_id"`
 	Type               EventType        `json:"type"`

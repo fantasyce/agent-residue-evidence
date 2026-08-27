@@ -66,11 +66,11 @@ func openRecord(envelope encryptedEnvelope, key []byte, target any) error {
 	if err != nil {
 		return errors.New("encrypted record authentication failed")
 	}
-	nonce, err := base64.RawURLEncoding.DecodeString(envelope.Nonce)
+	nonce, err := decodeCanonicalBase64(envelope.Nonce)
 	if err != nil || len(nonce) != aead.NonceSize() {
 		return errors.New("encrypted record authentication failed")
 	}
-	ciphertext, err := base64.RawURLEncoding.DecodeString(envelope.Ciphertext)
+	ciphertext, err := decodeCanonicalBase64(envelope.Ciphertext)
 	if err != nil {
 		return errors.New("encrypted record authentication failed")
 	}
@@ -82,6 +82,14 @@ func openRecord(envelope encryptedEnvelope, key []byte, target any) error {
 		return errors.New("encrypted record authentication failed")
 	}
 	return nil
+}
+
+func decodeCanonicalBase64(value string) ([]byte, error) {
+	decoded, err := base64.RawURLEncoding.DecodeString(value)
+	if err != nil || base64.RawURLEncoding.EncodeToString(decoded) != value {
+		return nil, errors.New("non-canonical base64")
+	}
+	return decoded, nil
 }
 
 func (envelope encryptedEnvelope) associatedData() []byte {
