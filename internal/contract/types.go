@@ -125,6 +125,7 @@ type Report struct {
 	TaskID        string       `json:"task_id"`
 	Status        ReportStatus `json:"status"`
 	CreatedAt     time.Time    `json:"created_at"`
+	VerifiedAt    *time.Time   `json:"verified_at,omitempty"`
 	Candidates    []Candidate  `json:"candidates"`
 	Limitations   []string     `json:"limitations,omitempty"`
 }

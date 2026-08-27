@@ -17,6 +17,7 @@ import (
 	"github.com/fantasyce/agent-residue-evidence/internal/contract"
 	"github.com/fantasyce/agent-residue-evidence/internal/event"
 	"github.com/fantasyce/agent-residue-evidence/internal/fsobserve"
+	processobserve "github.com/fantasyce/agent-residue-evidence/internal/process"
 )
 
 var storeIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,255}$`)
@@ -59,7 +60,7 @@ func Open(home string, options ...Option) (*Store, error) {
 	return store, nil
 }
 
-func (s *Store) CreateTask(_ context.Context, taskID string, baseline fsobserve.Baseline) error {
+func (s *Store) CreateTask(_ context.Context, taskID string, baseline fsobserve.Baseline, processBaselines ...processobserve.Baseline) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if err := validateStoreID(taskID); err != nil {
@@ -72,7 +73,11 @@ func (s *Store) CreateTask(_ context.Context, taskID string, baseline fsobserve.
 		return err
 	}
 	now := s.config.clock().UTC()
-	record := TaskRecord{TaskID: taskID, State: contract.TaskActive, CreatedAt: now, HeartbeatAt: now, Baseline: baseline, Events: []event.Summary{}}
+	var processBaseline processobserve.Baseline
+	if len(processBaselines) > 0 {
+		processBaseline = processBaselines[0]
+	}
+	record := TaskRecord{TaskID: taskID, State: contract.TaskActive, CreatedAt: now, HeartbeatAt: now, Baseline: baseline, ProcessBaseline: processBaseline, Events: []event.Summary{}}
 	return atomicWriteJSON(path, record)
 }
 
@@ -187,6 +192,26 @@ func (s *Store) ForgetReport(reportID string) error {
 func (s *Store) saveReport(record ReportRecord) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.saveReportUnlocked(record)
+}
+
+func (s *Store) PutReport(report contract.Report) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.saveReportUnlocked(ReportRecord{Report: report, CompletedAt: s.config.clock().UTC()})
+}
+
+func (s *Store) UpdateReport(reportID string, report contract.Report) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	record, err := s.getReportUnlocked(reportID)
+	if err != nil {
+		return err
+	}
+	if report.ReportID != reportID {
+		return errors.New("updated report identity does not match")
+	}
+	record.Report = report
 	return s.saveReportUnlocked(record)
 }
 

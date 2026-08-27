@@ -3,11 +3,34 @@ package fsobserve
 import (
 	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
+	"os"
 	"sort"
 
 	"github.com/fantasyce/agent-residue-evidence/internal/contract"
 )
+
+func VerifyCandidate(candidate contract.Candidate) (contract.CurrentStatus, error) {
+	if candidate.Path == "" || (candidate.Kind != contract.CandidateFile && candidate.Kind != contract.CandidateDirectory) {
+		return contract.StatusUnknown, errors.New("candidate is not a filesystem object")
+	}
+	info, err := os.Lstat(candidate.Path)
+	if errors.Is(err, os.ErrNotExist) {
+		return contract.StatusNoLongerPresent, nil
+	}
+	if err != nil {
+		return contract.StatusUnknown, err
+	}
+	identity, err := objectIdentity(candidate.Path, info)
+	if err != nil {
+		return contract.StatusUnknown, err
+	}
+	if identity != candidate.ObjectIdentity || info.Size() != candidate.SizeBytes {
+		return contract.StatusChangedSinceReport, nil
+	}
+	return contract.StatusPresent, nil
+}
 
 func (o *Observer) Compare(ctx context.Context, baseline Baseline) (Diff, error) {
 	current, rootIDs, err := o.snapshot(ctx, baseline.Scope)

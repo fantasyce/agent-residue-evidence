@@ -11,6 +11,7 @@
     "task_id": {"type": "string", "minLength": 1, "maxLength": 256},
     "status": {"enum": ["NO_CANDIDATES_OBSERVED", "REVIEW_REQUIRED", "PARTIAL_EVIDENCE", "INTERRUPTED_TASK", "OBSERVATION_FAILED"]},
     "created_at": {"type": "string", "format": "date-time"},
+    "verified_at": {"type": "string", "format": "date-time"},
     "candidates": {
       "type": "array",
       "items": {

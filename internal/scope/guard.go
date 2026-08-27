@@ -17,13 +17,13 @@ var (
 )
 
 type Root struct {
-	Path     string
-	Identity string
+	Path     string `json:"path"`
+	Identity string `json:"identity"`
 }
 
 type Validated struct {
-	TaskID string
-	Roots  []Root
+	TaskID string `json:"task_id"`
+	Roots  []Root `json:"roots"`
 }
 
 type Guard struct {

@@ -7,15 +7,17 @@ import (
 	"github.com/fantasyce/agent-residue-evidence/internal/contract"
 	"github.com/fantasyce/agent-residue-evidence/internal/event"
 	"github.com/fantasyce/agent-residue-evidence/internal/fsobserve"
+	processobserve "github.com/fantasyce/agent-residue-evidence/internal/process"
 )
 
 type TaskRecord struct {
-	TaskID      string             `json:"task_id"`
-	State       contract.TaskState `json:"state"`
-	CreatedAt   time.Time          `json:"created_at"`
-	HeartbeatAt time.Time          `json:"heartbeat_at"`
-	Baseline    fsobserve.Baseline `json:"baseline"`
-	Events      []event.Summary    `json:"events"`
+	TaskID          string                  `json:"task_id"`
+	State           contract.TaskState      `json:"state"`
+	CreatedAt       time.Time               `json:"created_at"`
+	HeartbeatAt     time.Time               `json:"heartbeat_at"`
+	Baseline        fsobserve.Baseline      `json:"baseline"`
+	ProcessBaseline processobserve.Baseline `json:"process_baseline"`
+	Events          []event.Summary         `json:"events"`
 }
 
 type ReportRecord struct {

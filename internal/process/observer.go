@@ -118,6 +118,20 @@ func (o *Observer) Resolve(ctx context.Context, hints Hints) ([]Evidence, []Limi
 	return evidence, limitations
 }
 
+func (o *Observer) Verify(ctx context.Context, identities []Identity) (map[int]Evidence, []Limitation) {
+	evidence, limitations := o.Resolve(ctx, Hints{EventProcesses: identities})
+	verified := make(map[int]Evidence, len(evidence))
+	for _, item := range evidence {
+		for _, identity := range identities {
+			if sameIdentity(item.Identity, identity) {
+				verified[item.Identity.PID] = item
+				break
+			}
+		}
+	}
+	return verified, limitations
+}
+
 func bindStableHints(target map[int]Attribution, processes map[int]Metadata, hints []Identity, reason Attribution) {
 	for _, hint := range hints {
 		metadata, exists := processes[hint.PID]

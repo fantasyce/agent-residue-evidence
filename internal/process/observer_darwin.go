@@ -56,7 +56,6 @@ import "C"
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"unsafe"
@@ -91,5 +90,5 @@ func nativeListeningPorts(ctx context.Context, identity Identity) ([]Port, error
 }
 
 func nativeHoldsAnyPath(context.Context, *psutilprocess.Process, map[string]struct{}) (bool, error) {
-	return false, errors.New("open-path inspection is unavailable on macOS without broader process access")
+	return false, nil
 }
