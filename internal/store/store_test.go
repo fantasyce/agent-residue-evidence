@@ -40,13 +40,7 @@ func TestCreateAppendRestartAndComplete(t *testing.T) {
 	if err := store.CreateTask(context.Background(), "task-1", testBaseline("task-1", now)); err != nil {
 		t.Fatal(err)
 	}
-	info, err := os.Stat(store.taskPath("task-1"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if info.Mode().Perm() != 0o600 {
-		t.Fatalf("task file mode=%v", info.Mode().Perm())
-	}
+	assertPrivatePath(t, store.taskPath("task-1"), false)
 	if err := store.AppendEvents(context.Background(), "task-1", nil); err != nil {
 		t.Fatal(err)
 	}
