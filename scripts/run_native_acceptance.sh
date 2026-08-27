@@ -74,7 +74,7 @@ broad_root="/"
 if [[ "$go_os" == windows ]]; then native_base="$(native_path "$task_base")"; broad_root="${native_base%%/*}/"; fi
 if printf '{"task_id":"native-broad","workspace":"%s"}\n' "$broad_root" | "$binary" begin >/dev/null 2>&1; then echo 'broad root accepted' >&2; exit 1; fi
 
-binary_sha="$(shasum -a 256 "$binary" | awk '{print $1}')"
+binary_sha="$(python3 -c 'import hashlib,sys; print(hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())' "$binary")"
 summary="${ARE_ACCEPTANCE_SUMMARY:-}"
 if [[ -n "$summary" ]]; then
   python3 - "$summary" "$go_os" "$go_arch" "$(go version)" "$commit" "$binary_sha" "$report_id" <<'PY'
