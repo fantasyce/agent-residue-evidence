@@ -15,8 +15,16 @@ assert version in (repo/'docs/install.md').read_text()
 manifest=(repo/'packaging/mcpb/manifest.json.in').read_text(); registry=(repo/'packaging/mcp-registry/server.json.in').read_text()
 assert '@VERSION@' in manifest and '@COMMIT@' in manifest
 assert '@VERSION@' in registry and '@MCPB_SHA256@' in registry
+assert 'https://fantasyce.github.io/agent-residue-evidence/' in registry
 workflow=(repo/'.github/workflows/quality.yml').read_text()
 assert f'ARE_RELEASE_VERSION: {version}' in workflow
+assert f'agent-residue-evidence_{version}_' in workflow
+release=(repo/'.github/workflows/release.yml').read_text()
+publish=(repo/'.github/workflows/publish-mcp.yml').read_text()
+assert f'ARE_RELEASE_VERSION: {version}' in release
+assert f'ref: v{version}' in publish
+assert f'/versions/{version}' in publish
+assert f'"release": "v{version}"' in (repo/'docs/launch/launch-manifest.json').read_text()
 PY
 output="$(cd "$repo_dir" && GOPROXY=off GOSUMDB=off go run ./cmd/agent-residue-evidence --version)"
 [[ "$output" == "agent-residue-evidence $version (unknown)" ]] || { echo "binary version mismatch: $output" >&2; exit 1; }

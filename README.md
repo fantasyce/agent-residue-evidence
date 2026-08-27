@@ -13,6 +13,10 @@ listening ports. It never deletes files, stops processes, closes ports, decides
 that something is safe to delete, scans the full machine, uploads data, uses
 the network, or collects telemetry.
 
+Visit the [project site](https://fantasyce.github.io/agent-residue-evidence/),
+run the [reproducible task-residue demo](docs/demo.md), or download the
+[latest verified release](https://github.com/fantasyce/agent-residue-evidence/releases/latest).
+
 ## Standard task
 
 Before the first test or build, the Agent calls `begin_task_observation` with
@@ -60,6 +64,9 @@ checksums, provenance, and SPDX SBOM. See [Quickstart](docs/quickstart.md) and
 [Install](docs/install.md). Runtime operation is fully local and offline.
 Reports default to seven-day retention and a 100 MB total cap; retained reports
 and active baselines are protected. Uninstall never silently deletes reports.
+
+The MCP Registry namespace is
+`io.github.fantasyce/agent-residue-evidence`.
 
 Native acceptance covers macOS 14+ arm64, Linux amd64, and Windows 11 amd64
 through mandatory native CI jobs. Cross-compilation alone is not reported as

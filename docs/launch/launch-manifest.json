@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "release": "v0.3.0",
+  "prepared_at": "2026-08-27T00:00:00+08:00",
+  "finalized_at": null,
+  "channels": [
+    {"id":"github-release","target":"https://github.com/fantasyce/agent-residue-evidence/releases/tag/v0.3.0","copy":"release workflow","status":"prepared","checked_at":null,"public_url":null,"reason":null},
+    {"id":"mcp-registry","target":"https://registry.modelcontextprotocol.io/","copy":"packaging/mcp-registry/server.json.in","status":"prepared","checked_at":null,"public_url":null,"reason":null},
+    {"id":"github-pages","target":"https://fantasyce.github.io/agent-residue-evidence/","copy":"site/","status":"prepared","checked_at":null,"public_url":null,"reason":null},
+    {"id":"github-discussion","target":"https://github.com/fantasyce/agent-residue-evidence/discussions","copy":"docs/launch/launch-article.md","status":"prepared","checked_at":null,"public_url":null,"reason":null},
+    {"id":"design-partners","target":"repository integration invitation","copy":"docs/launch/maintainer-outreach.md","status":"prepared","checked_at":null,"public_url":null,"reason":null},
+    {"id":"show-hn","target":"https://news.ycombinator.com/submit","copy":"docs/launch/community-posts.md#show-hn","status":"blocked","checked_at":"2026-08-27T00:00:00+08:00","public_url":null,"reason":"Owner directed that external authenticated channels remain unpublished for this launch."},
+    {"id":"openai-developer-forum","target":"https://community.openai.com/","copy":"docs/launch/community-posts.md#openai-developer-forum","status":"blocked","checked_at":"2026-08-27T00:00:00+08:00","public_url":null,"reason":"Owner directed that external authenticated channels remain unpublished for this launch."},
+    {"id":"mcp-community","target":"public MCP community channel","copy":"docs/launch/community-posts.md#mcp-community","status":"blocked","checked_at":"2026-08-27T00:00:00+08:00","public_url":null,"reason":"Owner directed that external authenticated channels beyond the official Registry remain unpublished for this launch."},
+    {"id":"reddit","target":"relevant subreddit after rules review","copy":"docs/launch/community-posts.md#reddit","status":"blocked","checked_at":"2026-08-27T00:00:00+08:00","public_url":null,"reason":"Owner directed that Reddit remain unpublished without an authenticated session."},
+    {"id":"x","target":"authenticated project or maintainer account","copy":"docs/launch/community-posts.md#x","status":"blocked","checked_at":"2026-08-27T00:00:00+08:00","public_url":null,"reason":"Owner directed that X remain unpublished without an authenticated session."},
+    {"id":"linkedin","target":"authenticated maintainer account","copy":"docs/launch/community-posts.md#linkedin","status":"blocked","checked_at":"2026-08-27T00:00:00+08:00","public_url":null,"reason":"Owner directed that LinkedIn remain unpublished without an authenticated session."},
+    {"id":"chinese-community","target":"appropriate authenticated Chinese developer community","copy":"docs/launch/community-posts.md#中文","status":"blocked","checked_at":"2026-08-27T00:00:00+08:00","public_url":null,"reason":"Owner directed that external authenticated Chinese communities remain unpublished for this launch."},
+    {"id":"showcase","target":"applicable public developer showcase","copy":"docs/launch/showcase-submission.md","status":"blocked","checked_at":"2026-08-27T00:00:00+08:00","public_url":null,"reason":"Owner directed that external authenticated showcase submissions remain unpublished for this launch."}
+  ]
+}

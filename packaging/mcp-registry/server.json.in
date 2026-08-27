@@ -4,7 +4,12 @@
   "title": "Agent Residue Evidence",
   "description": "Report local task-scoped test and build residue without cleaning resources.",
   "version": "@VERSION@",
-  "repository": {"url": "https://github.com/fantasyce/agent-residue-evidence", "source": "github"},
+  "websiteUrl": "https://fantasyce.github.io/agent-residue-evidence/",
+  "repository": {
+    "id": "1348411114",
+    "url": "https://github.com/fantasyce/agent-residue-evidence",
+    "source": "github"
+  },
   "packages": [{
     "registryType": "mcpb",
     "identifier": "https://github.com/fantasyce/agent-residue-evidence/releases/download/v@VERSION@/agent-residue-evidence_@VERSION@.mcpb",
