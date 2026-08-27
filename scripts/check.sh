@@ -16,4 +16,6 @@ go mod verify
 go test -count=1 -race ./...
 bash scripts/test_plugin_surface.sh
 bash scripts/run_privacy_acceptance.sh
+bash scripts/open_source_check.sh
+bash scripts/verify_release_metadata.sh
 git diff --check

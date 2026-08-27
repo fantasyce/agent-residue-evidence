@@ -4,6 +4,10 @@ ARE is distributed as native archives for macOS arm64, Linux amd64, and
 Windows 11 amd64, plus a cross-platform MCPB. It runs fully locally and does
 not download code at first launch.
 
+The first candidate version is `0.1.0`; asset names start with
+`agent-residue-evidence_0.1.0_`, and the bundle is
+`agent-residue-evidence_0.1.0.mcpb`. Publication waits for all native gates.
+
 ## Verify before installing
 
 Download the native archive, `SHA256SUMS`, `sbom.spdx.json`, and release
