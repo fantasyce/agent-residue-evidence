@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-residue-evidence.local/schemas/task-lifecycle.schema.json",
+  "title": "Agent Residue Task Lifecycle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "state"],
+  "properties": {
+    "schema_version": {"const": "agent-residue-lifecycle/1.0"},
+    "task_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "state": {"enum": ["ACTIVE", "COMPLETED", "INTERRUPTED", "EXPIRED"]}
+  }
+}

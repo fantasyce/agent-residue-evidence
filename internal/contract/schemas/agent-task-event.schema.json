@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent-residue-evidence.local/schemas/agent-task-event.schema.json",
+  "title": "Agent Task Event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "task_id", "event_id", "type", "timestamp"],
+  "properties": {
+    "schema_version": {"const": "agent-task-event/1.0"},
+    "task_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "event_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "type": {"enum": ["command_started", "command_completed", "process_started", "process_exited", "artifact_declared", "test_phase_started", "test_phase_completed", "cleanup_attempted"]},
+    "timestamp": {"type": "string", "format": "date-time"},
+    "working_directory": {"type": "string", "maxLength": 4096},
+    "command_fingerprint": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "exit_code": {"type": "integer"},
+    "process": {"type": "object", "additionalProperties": false, "required": ["pid", "created_at"], "properties": {"pid": {"type": "integer", "minimum": 1}, "created_at": {"type": "string", "format": "date-time"}}},
+    "declared_outputs": {"type": "array", "maxItems": 128, "items": {"type": "string", "maxLength": 4096}},
+    "receipt_id": {"type": "string", "maxLength": 256}
+  }
+}
