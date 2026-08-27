@@ -32,10 +32,13 @@ jobs:
         include:
           - runner: macos-15
             target: darwin_arm64
+            extension: tar.gz
           - runner: ubuntu-24.04
             target: linux_amd64
+            extension: tar.gz
           - runner: windows-2025
             target: windows_amd64
+            extension: zip
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v7
@@ -62,6 +65,13 @@ jobs:
           ARE_RELEASE_VERSION: 0.1.0
           ARE_RELEASE_COMMIT: ${{ github.sha }}
         run: bash scripts/build_release_assets.sh "$RUNNER_TEMP/are-dist" '${{ matrix.target }}'
+      - name: Upload native release package
+        uses: actions/upload-artifact@v7
+        with:
+          name: native-package-${{ matrix.target }}
+          path: ${{ runner.temp }}/are-dist/agent-residue-evidence_0.1.0_${{ matrix.target }}.${{ matrix.extension }}
+          if-no-files-found: error
+          retention-days: 1
       - name: Zero residue
         shell: bash
         run: bash scripts/verify_zero_residue.sh
