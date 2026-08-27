@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 520" role="img" aria-labelledby="title desc">
+  <title id="title">ARE residue checkpoint</title>
+  <desc id="desc">A task moves from scoped observation through human review and authorized cleanup to verification.</desc>
+  <rect width="680" height="520" fill="#fffdf7"/>
+  <g fill="none" stroke="#29251f" stroke-width="3">
+    <rect x="55" y="50" width="570" height="90"/>
+    <rect x="55" y="205" width="570" height="90"/>
+    <rect x="55" y="360" width="570" height="90"/>
+    <path d="M340 140v65M340 295v65"/>
+  </g>
+  <g font-family="ui-monospace, monospace">
+    <text x="85" y="88" fill="#9b3e2b" font-size="15" font-weight="700">OBSERVE</text>
+    <text x="85" y="117" fill="#29251f" font-size="22">workspace + task temp roots</text>
+    <text x="85" y="243" fill="#9b3e2b" font-size="15" font-weight="700">HUMAN CHECKPOINT</text>
+    <text x="85" y="272" fill="#29251f" font-size="22">review evidence · authorize action</text>
+    <text x="85" y="398" fill="#155f59" font-size="15" font-weight="700">VERIFY</text>
+    <text x="85" y="427" fill="#29251f" font-size="22">same stable candidates · new revision</text>
+  </g>
+</svg>

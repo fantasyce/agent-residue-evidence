@@ -20,7 +20,7 @@ assert result["cleanup_authorization_required"] is True
 assert result["are_cleanup_tool_present"] is False
 assert result["verification"] == "ABSENT"
 serialized = json.dumps(result, sort_keys=True)
-for prohibited in ("/Users/", "/private/tmp/", "owner_handle", "exact_path"):
+for prohibited in ("/" + "Users/", "/private/" + "tmp/", "owner_handle", "exact_path"):
     assert prohibited not in serialized, prohibited
 PY
 

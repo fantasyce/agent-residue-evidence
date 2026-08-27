@@ -26,4 +26,32 @@ if rg -n 'https?://[^" ]+\.(js|css|woff2?|ttf)|<script|googletag|segment\.com|pl
   exit 1
 fi
 
+tmp_root="$(cd "${TMPDIR:-/tmp}" && pwd -P)"
+test_root="$(mktemp -d "$tmp_root/are-site-test.XXXXXX")"
+server_pid=""
+cleanup() {
+  if [[ -n "$server_pid" ]]; then kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true; fi
+  case "$test_root" in "$tmp_root"/are-site-test.*) find "$test_root" -depth -delete 2>/dev/null || true ;; *) return 1 ;; esac
+}
+trap cleanup EXIT INT TERM
+port_file="$test_root/port"
+python3 - "$repo_dir/site" "$port_file" <<'PY' &
+import http.server, pathlib, sys
+root, port_file = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+class Quiet(http.server.SimpleHTTPRequestHandler):
+    def log_message(self, format, *args):
+        pass
+handler = lambda *args, **kwargs: Quiet(*args, directory=root, **kwargs)
+server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+port_file.write_text(str(server.server_port), encoding="ascii")
+server.serve_forever()
+PY
+server_pid=$!
+for _ in 1 2 3 4 5 6 7 8 9 10; do [[ -s "$port_file" ]] && break; sleep 0.1; done
+[[ -s "$port_file" ]]
+port="$(cat "$port_file")"
+curl --fail --silent --show-error "http://127.0.0.1:$port/" > "$test_root/index.html"
+cmp "$index" "$test_root/index.html"
+curl --fail --silent --show-error "http://127.0.0.1:$port/styles.css" >/dev/null
+
 echo 'site tests passed'
