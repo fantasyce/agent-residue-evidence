@@ -16,15 +16,15 @@ import (
 const MaxBatchEvents = 1000
 
 type Summary struct {
-	EventID            string
-	Type               contract.EventType
-	Timestamp          time.Time
-	WorkingDir         string
-	CommandFingerprint string
-	ExitCode           *int
-	Process            *contract.ProcessIdentity
-	DeclaredOutputs    []string
-	ReceiptID          string
+	EventID            string                    `json:"event_id"`
+	Type               contract.EventType        `json:"type"`
+	Timestamp          time.Time                 `json:"timestamp"`
+	WorkingDir         string                    `json:"working_directory,omitempty"`
+	CommandFingerprint string                    `json:"command_fingerprint,omitempty"`
+	ExitCode           *int                      `json:"exit_code,omitempty"`
+	Process            *contract.ProcessIdentity `json:"process,omitempty"`
+	DeclaredOutputs    []string                  `json:"declared_outputs,omitempty"`
+	ReceiptID          string                    `json:"receipt_id,omitempty"`
 }
 
 func Normalize(batch []contract.TaskEvent, validated scope.Validated) ([]Summary, error) {
