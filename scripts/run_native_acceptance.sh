@@ -3,13 +3,15 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 repo_dir="$(cd "$script_dir/.." && pwd -P)"
+go_os="$(go env GOOS)"; go_arch="$(go env GOARCH)"
 task_base="${TMPDIR:-/tmp}"; task_base="${task_base%/}"
+if [[ "$go_os" == windows ]]; then task_base="$(cygpath -u "$task_base")"; fi
 test_root="$(mktemp -d "$task_base/are-native-acceptance.XXXXXX")"
 cleanup() { case "$test_root" in "$task_base"/are-native-acceptance.*) find "$test_root" -depth -delete 2>/dev/null || true ;; *) return 1 ;; esac; }
 trap cleanup EXIT INT TERM
 
-go_os="$(go env GOOS)"; go_arch="$(go env GOARCH)"
 case "${go_os}_${go_arch}" in darwin_arm64|linux_amd64|windows_amd64) ;; *) echo "unsupported native host: ${go_os}/${go_arch}" >&2; exit 1 ;; esac
+native_path() { if [[ "$go_os" == windows ]]; then cygpath -m "$1"; else printf '%s\n' "$1"; fi; }
 commit="$(git -C "$repo_dir" rev-parse HEAD)"; version=0.1.0
 binary="$test_root/agent-residue-evidence"; [[ "$go_os" == windows ]] && binary="$binary.exe"
 GOPROXY=off GOSUMDB=off go build -C "$repo_dir" -trimpath \
@@ -18,17 +20,18 @@ GOPROXY=off GOSUMDB=off go build -C "$repo_dir" -trimpath \
 GOPROXY=off GOSUMDB=off go test -C "$repo_dir" -count=1 -race \
   ./internal/app ./internal/correlate ./internal/event ./internal/fsobserve ./internal/process ./internal/scope ./internal/store
 
-export ARE_HOME="$test_root/state"
+export ARE_HOME="$(native_path "$test_root/state")"
 workspace="$test_root/workspace"; task_temp="$test_root/task-temp"; mkdir -p "$workspace" "$task_temp"
-printf '{"task_id":"native-standard","workspace":"%s","temp_roots":["%s"]}\n' "$workspace" "$task_temp" | "$binary" begin > "$test_root/begin.json"
+workspace_native="$(native_path "$workspace")"; task_temp_native="$(native_path "$task_temp")"
+printf '{"task_id":"native-standard","workspace":"%s","temp_roots":["%s"]}\n' "$workspace_native" "$task_temp_native" | "$binary" begin > "$test_root/begin.json"
 mkdir -p "$workspace/generated"; printf 'ARE_PRIVATE_FIXTURE_DO_NOT_COPY' > "$workspace/generated/result.log"
 fingerprint="sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-printf '{"task_id":"native-standard","events":[{"schema_version":"agent-task-event/1.0","task_id":"native-standard","event_id":"artifact-1","type":"artifact_declared","timestamp":"2026-08-27T10:00:00Z","working_directory":"%s","command_fingerprint":"%s","declared_outputs":["%s"]}]}\n' "$workspace" "$fingerprint" "$workspace/generated/result.log" | "$binary" event append > "$test_root/event.json"
+printf '{"task_id":"native-standard","events":[{"schema_version":"agent-task-event/1.0","task_id":"native-standard","event_id":"artifact-1","type":"artifact_declared","timestamp":"2026-08-27T10:00:00Z","working_directory":"%s","command_fingerprint":"%s","declared_outputs":["%s"]}]}\n' "$workspace_native" "$fingerprint" "$(native_path "$workspace/generated/result.log")" | "$binary" event append > "$test_root/event.json"
 printf '{"task_id":"native-standard"}\n' | "$binary" end > "$test_root/end.json"
 
 # No-event prospective baseline remains a valid standard journey.
 empty="$test_root/empty"; mkdir -p "$empty"
-printf '{"task_id":"native-empty","workspace":"%s"}\n' "$empty" | "$binary" begin >/dev/null
+printf '{"task_id":"native-empty","workspace":"%s"}\n' "$(native_path "$empty")" | "$binary" begin >/dev/null
 printf '{"task_id":"native-empty"}\n' | "$binary" end > "$test_root/empty-report.json"
 
 # Agent-owned cleanup occurs outside ARE, followed by candidate-only verify.
@@ -38,7 +41,7 @@ printf '{"report_id":"%s"}\n' "$report_id" | "$binary" verify > "$test_root/veri
 
 # Retrospective inspection must remain downgraded and partial.
 historical="$test_root/historical"; mkdir -p "$historical"; touch "$historical/old.log"
-printf '{"scope":{"task_id":"native-retrospective","workspace":"%s"},"started_at":"2020-01-01T00:00:00Z","ended_at":"2030-01-01T00:00:00Z","events":[]}\n' "$historical" | "$binary" inspect-completed > "$test_root/retrospective.json"
+printf '{"scope":{"task_id":"native-retrospective","workspace":"%s"},"started_at":"2020-01-01T00:00:00Z","ended_at":"2030-01-01T00:00:00Z","events":[]}\n' "$(native_path "$historical")" | "$binary" inspect-completed > "$test_root/retrospective.json"
 
 python3 - "$test_root" <<'PY'
 import json, pathlib, sys
@@ -67,7 +70,9 @@ for _ in range(2):
 PY
 
 # Broad-root rejection must be a hard error.
-if printf '{"task_id":"native-broad","workspace":"/"}\n' | "$binary" begin >/dev/null 2>&1; then echo 'broad root accepted' >&2; exit 1; fi
+broad_root="/"
+if [[ "$go_os" == windows ]]; then native_base="$(native_path "$task_base")"; broad_root="${native_base%%/*}/"; fi
+if printf '{"task_id":"native-broad","workspace":"%s"}\n' "$broad_root" | "$binary" begin >/dev/null 2>&1; then echo 'broad root accepted' >&2; exit 1; fi
 
 binary_sha="$(shasum -a 256 "$binary" | awk '{print $1}')"
 summary="${ARE_ACCEPTANCE_SUMMARY:-}"
