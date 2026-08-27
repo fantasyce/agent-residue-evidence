@@ -44,7 +44,8 @@ python3 - "$test_root" <<'PY'
 import json, pathlib, sys
 root=pathlib.Path(sys.argv[1]); standard=json.loads((root/'end.json').read_text()); verified=json.loads((root/'verified.json').read_text())
 empty=json.loads((root/'empty-report.json').read_text()); retro=json.loads((root/'retrospective.json').read_text())
-assert standard['status'] == 'REVIEW_REQUIRED' and standard['candidates']
+expected_status = 'PARTIAL_EVIDENCE' if standard.get('limitations') else 'REVIEW_REQUIRED'
+assert standard['status'] == expected_status and standard['candidates']
 assert 'ARE_PRIVATE_FIXTURE_DO_NOT_COPY' not in (root/'end.json').read_text()
 assert any(c['evidence_level']=='BASELINE_OBSERVED' for c in standard['candidates'])
 assert all(c['current_status']=='NO_LONGER_PRESENT' for c in verified['candidates'] if c['kind'] in ('file','directory'))

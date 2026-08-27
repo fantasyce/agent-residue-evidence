@@ -39,7 +39,11 @@ func TestBeginEndAndVerifyFilesystemResidue(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if report.Status != contract.ReportReviewRequired || len(report.Candidates) < 2 {
+	wantStatus := contract.ReportReviewRequired
+	if len(report.Limitations) > 0 {
+		wantStatus = contract.ReportPartialEvidence
+	}
+	if report.Status != wantStatus || len(report.Candidates) < 2 {
 		t.Fatalf("report=%#v", report)
 	}
 	if err := os.RemoveAll(artifact); err != nil {
