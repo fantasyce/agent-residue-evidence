@@ -88,6 +88,7 @@ type Candidate struct {
 	ID             string        `json:"id"`
 	Kind           CandidateKind `json:"kind"`
 	Path           string        `json:"path,omitempty"`
+	ObjectIdentity string        `json:"object_identity,omitempty"`
 	SizeBytes      int64         `json:"size_bytes,omitempty"`
 	EvidenceLevel  EvidenceLevel `json:"evidence_level"`
 	CurrentStatus  CurrentStatus `json:"current_status"`
