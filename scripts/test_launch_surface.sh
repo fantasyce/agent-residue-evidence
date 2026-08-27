@@ -20,6 +20,9 @@ assert manifest["schema_version"] == 1
 assert manifest["release"] == "v0.3.0"
 channels = {item["id"]: item for item in manifest["channels"]}
 assert {"github-release","mcp-registry","github-pages","github-discussion","design-partners"} <= channels.keys()
+for channel in ("github-release","mcp-registry","github-pages","github-discussion","design-partners"):
+    assert channels[channel]["status"] == "published"
+    assert channels[channel]["public_url"].startswith("https://")
 for channel in ("reddit","x","linkedin","show-hn","openai-developer-forum","chinese-community"):
     assert channels[channel]["status"] == "blocked"
     assert "owner" in channels[channel]["reason"].lower()
