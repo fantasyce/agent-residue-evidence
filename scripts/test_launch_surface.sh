@@ -33,6 +33,9 @@ assert "io.github.fantasyce%2Fagent-residue-evidence/versions/0.3.0" in registry
 for workflow in (release, registry):
     assert "actions/checkout@" in workflow
     assert "actions/checkout@v" not in workflow
+    assert " +            --" not in workflow
+    assert "&& +" not in workflow
+    assert 'run: "$RUNNER_' not in workflow
 PY
 
 echo 'launch surface tests passed'
