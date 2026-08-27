@@ -18,17 +18,32 @@ import (
 	"github.com/fantasyce/agent-residue-evidence/internal/versioninfo"
 )
 
-type taskIDInput struct {
-	TaskID string `json:"task_id"`
+type accessInput struct {
+	OwnerHandle string `json:"owner_handle"`
+	ReportID    string `json:"report_id,omitempty"`
 }
 
-type reportIDInput struct {
-	ReportID string `json:"report_id"`
+type reportInput struct {
+	OwnerHandle string `json:"owner_handle"`
+	ReportID    string `json:"report_id,omitempty"`
+	Revision    int    `json:"revision,omitempty"`
+	Cursor      string `json:"cursor,omitempty"`
+	Limit       int    `json:"limit,omitempty"`
 }
 
 type eventsInput struct {
-	TaskID string               `json:"task_id"`
-	Events []contract.TaskEvent `json:"events"`
+	OwnerHandle string               `json:"owner_handle"`
+	Events      []contract.TaskEvent `json:"events"`
+}
+
+type resolveInput struct {
+	OwnerHandle string `json:"owner_handle"`
+	CandidateID string `json:"candidate_id"`
+}
+
+type retrospectiveInput struct {
+	GrantHandle string               `json:"grant_handle"`
+	Events      []contract.TaskEvent `json:"events,omitempty"`
 }
 
 type doctorResult struct {
@@ -60,45 +75,73 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	case len(args) == 1 && args[0] == "begin":
 		var input contract.TaskScope
 		if err = decodeOne(stdin, &input); err == nil {
-			result, err = service.Begin(contextBackground(), input)
+			if input.RecoveryProfile == contract.RecoveryEphemeral {
+				err = errors.New("EPHEMERAL requires a persistent MCP session")
+			} else {
+				result, err = service.Begin(contextBackground(), input)
+			}
 		}
 	case len(args) == 2 && args[0] == "event" && args[1] == "append":
 		var input eventsInput
 		if err = decodeOne(stdin, &input); err == nil {
-			err = service.AppendEvents(contextBackground(), input.TaskID, input.Events)
-			result = map[string]any{"task_id": input.TaskID, "accepted": err == nil, "event_count": len(input.Events)}
+			err = service.AppendEvents(contextBackground(), input.OwnerHandle, input.Events)
+			result = map[string]any{"accepted": err == nil, "event_count": len(input.Events)}
 		}
 	case len(args) == 1 && args[0] == "end":
-		var input taskIDInput
+		var input accessInput
 		if err = decodeOne(stdin, &input); err == nil {
-			result, err = service.End(contextBackground(), input.TaskID)
+			if _, err = service.End(contextBackground(), input.OwnerHandle); err == nil {
+				result, err = service.Summarize(input.OwnerHandle, 0, "", 20)
+			}
 		}
-	case len(args) == 1 && args[0] == "inspect-completed":
+	case len(args) == 2 && args[0] == "grant" && args[1] == "retrospective":
 		var input app.InspectCompletedInput
 		if err = decodeOne(stdin, &input); err == nil {
-			result, err = service.InspectCompleted(contextBackground(), input)
+			result, err = service.GrantRetrospective(input)
+		}
+	case len(args) == 1 && args[0] == "inspect-completed":
+		var input retrospectiveInput
+		if err = decodeOne(stdin, &input); err == nil {
+			if _, err = service.InspectCompletedAuthorized(contextBackground(), input.GrantHandle, input.Events); err == nil {
+				result, err = service.Summarize(input.GrantHandle, 0, "", 20)
+			}
 		}
 	case len(args) == 2 && args[0] == "report" && args[1] == "get":
-		var input reportIDInput
+		var input reportInput
 		if err = decodeOne(stdin, &input); err == nil {
-			result, err = service.GetReport(input.ReportID)
+			limit := input.Limit
+			if limit == 0 {
+				limit = 20
+			}
+			result, err = service.Summarize(input.OwnerHandle, input.Revision, input.Cursor, limit)
 		}
 	case len(args) == 2 && args[0] == "report" && args[1] == "retain":
-		var input reportIDInput
+		var input accessInput
 		if err = decodeOne(stdin, &input); err == nil {
-			err = state.RetainReport(input.ReportID)
-			result = map[string]any{"report_id": input.ReportID, "retained": err == nil}
+			err = state.RetainOwnedReport(input.OwnerHandle)
+			result = map[string]any{"retained": err == nil}
 		}
 	case len(args) == 2 && args[0] == "report" && args[1] == "forget":
-		var input reportIDInput
+		var input accessInput
 		if err = decodeOne(stdin, &input); err == nil {
-			err = state.ForgetReport(input.ReportID)
-			result = map[string]any{"report_id": input.ReportID, "forgotten": err == nil}
+			err = state.ForgetOwnedReport(input.OwnerHandle)
+			result = map[string]any{"forgotten": err == nil}
 		}
 	case len(args) == 1 && args[0] == "verify":
-		var input reportIDInput
+		var input accessInput
 		if err = decodeOne(stdin, &input); err == nil {
-			result, err = service.Verify(contextBackground(), input.ReportID)
+			var revision contract.VerificationRevision
+			if revision, err = service.Verify(contextBackground(), input.OwnerHandle); err == nil {
+				result, err = service.Summarize(input.OwnerHandle, revision.Revision, "", 20)
+			}
+		}
+	case len(args) == 2 && args[0] == "candidate" && args[1] == "resolve":
+		var input resolveInput
+		if err = decodeOne(stdin, &input); err == nil {
+			var exact string
+			if exact, err = service.ResolveCandidate(input.OwnerHandle, input.CandidateID); err == nil {
+				result = map[string]string{"candidate_id": input.CandidateID, "exact_path": exact}
+			}
 		}
 	case len(args) == 1 && args[0] == "doctor":
 		result = doctorResult{Healthy: true, Version: versioninfo.Version, StateHome: home, NetworkAccess: false, Telemetry: false}
@@ -108,7 +151,7 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 		}
 		return 0
 	default:
-		err = errors.New("usage: agent-residue-evidence begin|event append|end|inspect-completed|report get|report retain|report forget|verify|doctor|mcp|--version")
+		err = errors.New("usage: agent-residue-evidence begin|event append|end|grant retrospective|inspect-completed|report get|report retain|report forget|verify|candidate resolve|doctor|mcp|--version")
 		usageFailure = true
 	}
 	if err != nil {

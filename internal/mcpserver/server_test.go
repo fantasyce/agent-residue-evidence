@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"testing"
+	"time"
 
 	"github.com/fantasyce/agent-residue-evidence/internal/app"
 	"github.com/fantasyce/agent-residue-evidence/internal/contract"
@@ -62,7 +63,7 @@ func TestToolSurfaceIsEvidenceOnly(t *testing.T) {
 		}
 	}
 	sort.Strings(names)
-	want := []string{"append_task_events", "begin_task_observation", "end_task_observation", "get_residue_report", "inspect_completed_task", "verify_task_residue"}
+	want := []string{"append_task_events", "begin_task_observation", "delegate_task_executor", "end_task_observation", "get_residue_report", "inspect_completed_task", "resolve_residue_candidate", "verify_task_residue"}
 	if stringList(names) != stringList(want) {
 		t.Fatalf("tools=%v want=%v", names, want)
 	}
@@ -71,31 +72,129 @@ func TestToolSurfaceIsEvidenceOnly(t *testing.T) {
 func TestBeginEndGetVerifyRoundTrip(t *testing.T) {
 	root := t.TempDir()
 	client := testClient(t, testService(t))
-	begin, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: "begin_task_observation", Arguments: map[string]any{"task_id": "task-mcp", "workspace": root}})
+	begin, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: "begin_task_observation", Arguments: map[string]any{"task_id": "task-mcp", "workspace": root, "observation_mode": "GUIDED", "recovery_profile": "RECOVERABLE"}})
 	if err != nil || begin.IsError {
 		t.Fatalf("begin=%#v err=%v", begin, err)
+	}
+	var begun app.BeginResult
+	decodeStructured(t, begin.StructuredContent, &begun)
+	if begun.OwnerHandle == "" {
+		t.Fatalf("begin did not return recoverable owner handle: %#v", begun)
 	}
 	if err := os.WriteFile(filepath.Join(root, "mcp.log"), nil, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	end, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: "end_task_observation", Arguments: map[string]any{"task_id": "task-mcp"}})
+	end, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: "end_task_observation", Arguments: map[string]any{"owner_handle": begun.OwnerHandle}})
 	if err != nil || end.IsError {
 		t.Fatalf("end=%#v err=%v", end, err)
 	}
-	var report contract.Report
+	var report app.ReportSummary
 	decodeStructured(t, end.StructuredContent, &report)
 	wantStatus := contract.ReportReviewRequired
 	if len(report.Limitations) > 0 {
 		wantStatus = contract.ReportPartialEvidence
 	}
-	if report.Status != wantStatus {
+	if report.Status != wantStatus || report.CandidateTotal != 1 || len(report.Candidates) != 1 {
 		t.Fatalf("report=%#v", report)
 	}
-	for _, tool := range []string{"get_residue_report", "verify_task_residue"} {
-		result, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: tool, Arguments: map[string]any{"report_id": report.ReportID}})
+	for _, item := range []struct {
+		name      string
+		arguments map[string]any
+	}{
+		{name: "get_residue_report", arguments: map[string]any{"owner_handle": begun.OwnerHandle, "revision": 0, "limit": 20}},
+		{name: "verify_task_residue", arguments: map[string]any{"owner_handle": begun.OwnerHandle}},
+	} {
+		result, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: item.name, Arguments: item.arguments})
 		if err != nil || result.IsError {
-			t.Fatalf("%s=%#v err=%v", tool, result, err)
+			t.Fatalf("%s=%#v err=%v", item.name, result, err)
 		}
+	}
+}
+
+func TestReportIDAloneAndWrongOwnerCannotAccessAnotherTask(t *testing.T) {
+	root := t.TempDir()
+	client := testClient(t, testService(t))
+	begin, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: "begin_task_observation", Arguments: map[string]any{"task_id": "private-task", "workspace": root}})
+	if err != nil || begin.IsError {
+		t.Fatalf("begin=%#v err=%v", begin, err)
+	}
+	var begun app.BeginResult
+	decodeStructured(t, begin.StructuredContent, &begun)
+	end, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: "end_task_observation", Arguments: map[string]any{"owner_handle": begun.OwnerHandle}})
+	if err != nil || end.IsError {
+		t.Fatalf("end=%#v err=%v", end, err)
+	}
+	var summary app.ReportSummary
+	decodeStructured(t, end.StructuredContent, &summary)
+	for _, arguments := range []map[string]any{
+		{"report_id": summary.ReportID},
+		{"owner_handle": "are2.owner.invalid", "report_id": summary.ReportID},
+		{"owner_handle": begun.ObservationID, "report_id": summary.ReportID},
+	} {
+		result, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: "get_residue_report", Arguments: arguments})
+		if err == nil && (result == nil || !result.IsError) {
+			t.Fatalf("unauthorized arguments accepted: %#v result=%#v", arguments, result)
+		}
+	}
+}
+
+func TestEphemeralObservationStaysInSessionAndCannotResumeAfterRestart(t *testing.T) {
+	root := t.TempDir()
+	home := t.TempDir()
+	state, err := store.Open(home)
+	if err != nil {
+		t.Fatal(err)
+	}
+	service := app.New(state)
+	client := testClient(t, service)
+	begin, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: "begin_task_observation", Arguments: map[string]any{"task_id": "ephemeral-task", "workspace": root, "recovery_profile": "EPHEMERAL"}})
+	if err != nil || begin.IsError {
+		t.Fatalf("begin=%#v err=%v", begin, err)
+	}
+	var begun app.BeginResult
+	decodeStructured(t, begin.StructuredContent, &begun)
+	if begun.OwnerHandle != "" || begun.ObservationID == "" {
+		t.Fatalf("ephemeral authority exposed: %#v", begun)
+	}
+	result, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: "append_task_events", Arguments: map[string]any{"observation_id": begun.ObservationID, "events": []any{}}})
+	if err != nil || result.IsError {
+		t.Fatalf("same-session append=%#v err=%v", result, err)
+	}
+	restarted, err := store.Open(home)
+	if err != nil {
+		t.Fatal(err)
+	}
+	restartedClient := testClient(t, app.New(restarted))
+	result, err = restartedClient.CallTool(context.Background(), &mcp.CallToolParams{Name: "end_task_observation", Arguments: map[string]any{"observation_id": begun.ObservationID}})
+	if err == nil && (result == nil || !result.IsError) {
+		t.Fatalf("ephemeral task resumed after restart: %#v", result)
+	}
+}
+
+func TestRetrospectiveToolRequiresExplicitGrant(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "historical.log"), nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	service := testService(t)
+	now := time.Now().UTC()
+	grant, err := service.GrantRetrospective(app.InspectCompletedInput{Scope: contract.TaskScope{TaskID: "retro-mcp", Workspace: root}, StartedAt: now.Add(-time.Hour), EndedAt: now.Add(time.Hour)})
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := testClient(t, service)
+	without, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: "inspect_completed_task", Arguments: map[string]any{"events": []any{}}})
+	if err == nil && (without == nil || !without.IsError) {
+		t.Fatalf("ungranted inspection accepted: %#v", without)
+	}
+	result, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: "inspect_completed_task", Arguments: map[string]any{"grant_handle": grant.GrantHandle, "events": []any{}}})
+	if err != nil || result.IsError {
+		t.Fatalf("inspection=%#v err=%v", result, err)
+	}
+	var summary app.ReportSummary
+	decodeStructured(t, result.StructuredContent, &summary)
+	if summary.Status != contract.ReportPartialEvidence || summary.ObservationMode != contract.ObservationRetrospective {
+		t.Fatalf("summary=%#v", summary)
 	}
 }
 

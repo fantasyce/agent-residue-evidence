@@ -17,7 +17,7 @@ func TestEncryptedEnvelopeRoundTripHasNoPlaintext(t *testing.T) {
 		TaskID string `json:"task_id"`
 		Path   string `json:"path"`
 	}{TaskID: "goalboard-private-task", Path: "/Users/private/GoalBoard/build.log"}
-	envelope, err := sealRecord("task", "opaque-record", 0, time.Now().UTC(), time.Now().UTC().Add(time.Hour), "", key, secret)
+	envelope, err := sealRecord("task", "opaque-record", 0, time.Now().UTC(), time.Now().UTC().Add(time.Hour), "", false, key, secret)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -44,7 +44,7 @@ func TestEncryptedEnvelopeRoundTripHasNoPlaintext(t *testing.T) {
 
 func TestEncryptedEnvelopeRejectsWrongKeyAndTampering(t *testing.T) {
 	key := bytes.Repeat([]byte{1}, 32)
-	envelope, err := sealRecord("report", "opaque-record", 2, time.Now().UTC(), time.Now().UTC().Add(time.Hour), "", key, map[string]string{"value": "private"})
+	envelope, err := sealRecord("report", "opaque-record", 2, time.Now().UTC(), time.Now().UTC().Add(time.Hour), "", false, key, map[string]string{"value": "private"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func TestEncryptedEnvelopeRejectsWrongKeyAndTampering(t *testing.T) {
 
 func TestEncryptedEnvelopeBindsPublicMetadata(t *testing.T) {
 	key := bytes.Repeat([]byte{3}, 32)
-	envelope, err := sealRecord("task", "opaque-record", 0, time.Now().UTC(), time.Now().UTC().Add(time.Hour), "original-public-key", key, map[string]string{"value": "private"})
+	envelope, err := sealRecord("task", "opaque-record", 0, time.Now().UTC(), time.Now().UTC().Add(time.Hour), "original-public-key", false, key, map[string]string{"value": "private"})
 	if err != nil {
 		t.Fatal(err)
 	}

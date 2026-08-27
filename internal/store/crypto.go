@@ -21,11 +21,12 @@ type encryptedEnvelope struct {
 	CreatedAt     time.Time `json:"created_at"`
 	ExpiresAt     time.Time `json:"expires_at"`
 	PublicKey     string    `json:"public_key,omitempty"`
+	Protected     bool      `json:"protected,omitempty"`
 	Nonce         string    `json:"nonce"`
 	Ciphertext    string    `json:"ciphertext"`
 }
 
-func sealRecord(kind, opaqueID string, revision int, createdAt, expiresAt time.Time, publicKey string, key []byte, value any) (encryptedEnvelope, error) {
+func sealRecord(kind, opaqueID string, revision int, createdAt, expiresAt time.Time, publicKey string, protected bool, key []byte, value any) (encryptedEnvelope, error) {
 	if len(key) != 32 || kind == "" || opaqueID == "" || revision < 0 || createdAt.IsZero() || expiresAt.IsZero() {
 		return encryptedEnvelope{}, errors.New("invalid encrypted record parameters")
 	}
@@ -47,7 +48,7 @@ func sealRecord(kind, opaqueID string, revision int, createdAt, expiresAt time.T
 	}
 	envelope := encryptedEnvelope{
 		FormatVersion: encryptedFormatVersion, RecordKind: kind, OpaqueID: opaqueID, Revision: revision,
-		CreatedAt: createdAt.UTC(), ExpiresAt: expiresAt.UTC(), PublicKey: publicKey, Nonce: base64.RawURLEncoding.EncodeToString(nonce),
+		CreatedAt: createdAt.UTC(), ExpiresAt: expiresAt.UTC(), PublicKey: publicKey, Protected: protected, Nonce: base64.RawURLEncoding.EncodeToString(nonce),
 	}
 	envelope.Ciphertext = base64.RawURLEncoding.EncodeToString(aead.Seal(nil, nonce, plaintext, envelope.associatedData()))
 	return envelope, nil
@@ -84,7 +85,7 @@ func openRecord(envelope encryptedEnvelope, key []byte, target any) error {
 }
 
 func (envelope encryptedEnvelope) associatedData() []byte {
-	return []byte(fmt.Sprintf("%s\x00%s\x00%s\x00%d\x00%s\x00%s\x00%s",
+	return []byte(fmt.Sprintf("%s\x00%s\x00%s\x00%d\x00%s\x00%s\x00%s\x00%t",
 		envelope.FormatVersion, envelope.RecordKind, envelope.OpaqueID, envelope.Revision,
-		envelope.CreatedAt.UTC().Format(time.RFC3339Nano), envelope.ExpiresAt.UTC().Format(time.RFC3339Nano), envelope.PublicKey))
+		envelope.CreatedAt.UTC().Format(time.RFC3339Nano), envelope.ExpiresAt.UTC().Format(time.RFC3339Nano), envelope.PublicKey, envelope.Protected))
 }

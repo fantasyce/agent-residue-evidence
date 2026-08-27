@@ -73,28 +73,32 @@ func TestOwnedExecutorIsAppendOnlyAndRevokedOnCompletion(t *testing.T) {
 	if err := state.CreateOwnedTask(context.Background(), owner.String(), "task-owner", testBaseline("task-owner", now)); err != nil {
 		t.Fatal(err)
 	}
-	executor, err := capability.NewExecutor(owner, now.Add(time.Hour), []string{"artifact_declared"}, []string{"workspace"})
+	executor, err := state.DelegateOwnedExecutor(owner.String(), now.Add(time.Hour), []string{"artifact_declared"}, []string{"workspace"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := state.AppendOwnedEvents(context.Background(), executor.String(), []event.Summary{{EventID: "event-1", Type: contract.EventArtifactDeclared, Timestamp: now}}); err != nil {
+	if err := state.AppendOwnedExecutorEvents(context.Background(), executor, []event.Summary{{EventID: "event-1", Type: contract.EventArtifactDeclared, Timestamp: now}}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := state.LoadOwnedTask(executor.String()); err == nil {
+	if _, err := state.LoadOwnedTask(executor); err == nil {
 		t.Fatal("executor read task")
+	}
+	merged, err := state.LoadOwnedTaskForEnd(owner.String())
+	if err != nil || len(merged.Events) != 1 {
+		t.Fatalf("merged=%#v err=%v", merged.Events, err)
 	}
 	report := testReport("task-owner", "report-owner", now)
 	if err := state.CompleteOwnedTask(context.Background(), owner.String(), report); err != nil {
 		t.Fatal(err)
 	}
-	if err := state.AppendOwnedEvents(context.Background(), executor.String(), nil); err == nil {
+	if err := state.AppendOwnedExecutorEvents(context.Background(), executor, nil); err == nil {
 		t.Fatal("executor remained active after completion")
 	}
 	got, err := state.GetOwnedReport(owner.String())
 	if err != nil || got.Report.ReportID != "report-owner" {
 		t.Fatalf("got=%#v err=%v", got, err)
 	}
-	if _, err := state.GetOwnedReport(executor.String()); err == nil {
+	if _, err := state.GetOwnedReport(executor); err == nil {
 		t.Fatal("executor read report")
 	}
 }
@@ -141,5 +145,36 @@ func TestOwnedRetentionRequiresOwnerAndExpiresWithoutDecryption(t *testing.T) {
 	}
 	if _, err := state.GetOwnedReport(owner.String()); err == nil {
 		t.Fatal("forgotten report remained readable")
+	}
+}
+
+func TestCapacityPreservesRetainedEncryptedReport(t *testing.T) {
+	now := time.Date(2026, 8, 27, 12, 0, 0, 0, time.UTC)
+	state := newTestStore(t, WithClock(func() time.Time { return now }), WithCapacity(1))
+	retained, _ := capability.NewOwner()
+	if err := state.CreateOwnedTask(context.Background(), retained.String(), "retained", testBaseline("retained", now)); err != nil {
+		t.Fatal(err)
+	}
+	if err := state.CompleteOwnedTask(context.Background(), retained.String(), testReport("retained", "report-retained", now)); err != nil {
+		t.Fatal(err)
+	}
+	if err := state.RetainOwnedReport(retained.String()); err != nil {
+		t.Fatal(err)
+	}
+	evictable, _ := capability.NewOwner()
+	if err := state.CreateOwnedTask(context.Background(), evictable.String(), "evictable", testBaseline("evictable", now.Add(time.Minute))); err != nil {
+		t.Fatal(err)
+	}
+	if err := state.CompleteOwnedTask(context.Background(), evictable.String(), testReport("evictable", "report-evictable", now.Add(time.Minute))); err != nil {
+		t.Fatal(err)
+	}
+	if err := state.Sweep(context.Background(), now.Add(2*time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := state.GetOwnedReport(retained.String()); err != nil {
+		t.Fatalf("retained report evicted: %v", err)
+	}
+	if _, err := state.GetOwnedReport(evictable.String()); err == nil {
+		t.Fatal("unretained report survived over-capacity sweep")
 	}
 }

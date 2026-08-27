@@ -27,7 +27,7 @@ type Owner struct {
 type Executor struct {
 	OpaqueID     string   `json:"opaque_id"`
 	GrantID      string   `json:"grant_id"`
-	RecordKey    [32]byte `json:"record_key"`
+	AppendKey    [32]byte `json:"append_key"`
 	ExpiresUnix  int64    `json:"expires_unix"`
 	AllowedTypes []string `json:"allowed_types,omitempty"`
 	AllowedRoots []string `json:"allowed_roots,omitempty"`
@@ -37,7 +37,7 @@ type Executor struct {
 type executorClaims struct {
 	OpaqueID     string   `json:"opaque_id"`
 	GrantID      string   `json:"grant_id"`
-	RecordKey    [32]byte `json:"record_key"`
+	AppendKey    [32]byte `json:"append_key"`
 	ExpiresUnix  int64    `json:"expires_unix"`
 	AllowedTypes []string `json:"allowed_types,omitempty"`
 	AllowedRoots []string `json:"allowed_roots,omitempty"`
@@ -80,8 +80,11 @@ func NewExecutor(owner Owner, expiresAt time.Time, allowedTypes, allowedRoots []
 		return Executor{}, err
 	}
 	executor := Executor{
-		OpaqueID: owner.OpaqueID, GrantID: base64.RawURLEncoding.EncodeToString(grant), RecordKey: owner.RecordKey,
+		OpaqueID: owner.OpaqueID, GrantID: base64.RawURLEncoding.EncodeToString(grant),
 		ExpiresUnix: expiresAt.UTC().Unix(), AllowedTypes: sortedUnique(allowedTypes), AllowedRoots: sortedUnique(allowedRoots),
+	}
+	if _, err := rand.Read(executor.AppendKey[:]); err != nil {
+		return Executor{}, err
 	}
 	claims, err := json.Marshal(executor.claims())
 	if err != nil {
@@ -101,7 +104,7 @@ func ParseExecutor(raw string, now time.Time) (Executor, error) {
 		return Executor{}, ErrAccessDenied
 	}
 	var executor Executor
-	if err := decode(strings.TrimPrefix(raw, executorPrefix), &executor); err != nil || executor.OpaqueID == "" || executor.GrantID == "" || allZero(executor.RecordKey[:]) || len(executor.Signature) != ed25519.SignatureSize {
+	if err := decode(strings.TrimPrefix(raw, executorPrefix), &executor); err != nil || executor.OpaqueID == "" || executor.GrantID == "" || allZero(executor.AppendKey[:]) || len(executor.Signature) != ed25519.SignatureSize {
 		return Executor{}, ErrAccessDenied
 	}
 	if !now.UTC().Before(time.Unix(executor.ExpiresUnix, 0).UTC()) {
@@ -120,7 +123,7 @@ func (executor Executor) Verify(public ed25519.PublicKey) error {
 
 func (executor Executor) claims() executorClaims {
 	return executorClaims{
-		OpaqueID: executor.OpaqueID, GrantID: executor.GrantID, RecordKey: executor.RecordKey,
+		OpaqueID: executor.OpaqueID, GrantID: executor.GrantID, AppendKey: executor.AppendKey,
 		ExpiresUnix: executor.ExpiresUnix, AllowedTypes: executor.AllowedTypes, AllowedRoots: executor.AllowedRoots,
 	}
 }

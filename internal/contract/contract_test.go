@@ -68,3 +68,19 @@ func TestReportRejectsSafeDeleteRecommendation(t *testing.T) {
 		t.Fatalf("expected recommendation rejection, got %v", err)
 	}
 }
+
+func TestTaskScopeValidatesObservationModeAndRecoveryProfile(t *testing.T) {
+	valid := TaskScope{TaskID: "display-task", Workspace: "/tmp/project", ObservationMode: ObservationGuided, RecoveryProfile: RecoveryRecoverable}
+	if err := valid.ValidateMetadata(); err != nil {
+		t.Fatal(err)
+	}
+	valid.ObservationMode = "AUTOMATIC_BUT_UNPROVEN"
+	if err := valid.ValidateMetadata(); err == nil {
+		t.Fatal("unknown observation mode accepted")
+	}
+	valid.ObservationMode = ObservationGuided
+	valid.RecoveryProfile = "GLOBAL_RECOVERY_KEY"
+	if err := valid.ValidateMetadata(); err == nil {
+		t.Fatal("unknown recovery profile accepted")
+	}
+}

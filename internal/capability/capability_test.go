@@ -2,6 +2,9 @@ package capability
 
 import (
 	"crypto/ed25519"
+	"encoding/base64"
+	"encoding/json"
+	"strings"
 	"testing"
 	"time"
 )
@@ -46,6 +49,31 @@ func TestExecutorCannotForgeOwnerAndExpires(t *testing.T) {
 	}
 	if _, err := ParseExecutor(executor.String(), now.Add(2*time.Hour)); err == nil {
 		t.Fatal("expired executor accepted")
+	}
+}
+
+func TestExecutorHandleDoesNotContainOwnerRecordKey(t *testing.T) {
+	owner, err := NewOwner()
+	if err != nil {
+		t.Fatal(err)
+	}
+	executor, err := NewExecutor(owner, time.Now().UTC().Add(time.Hour), []string{"artifact_declared"}, []string{"workspace"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := base64.RawURLEncoding.DecodeString(strings.TrimPrefix(executor.String(), executorPrefix))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var fields map[string]any
+	if err := json.Unmarshal(raw, &fields); err != nil {
+		t.Fatal(err)
+	}
+	if _, exists := fields["record_key"]; exists {
+		t.Fatalf("executor leaked owner record key: %s", raw)
+	}
+	if _, exists := fields["append_key"]; !exists {
+		t.Fatalf("executor lacks isolated append key: %s", raw)
 	}
 }
 
