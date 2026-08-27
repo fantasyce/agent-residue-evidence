@@ -45,7 +45,8 @@ func assertPrivatePath(t *testing.T, path string, _ bool) {
 		t.Fatal(err)
 	}
 	aceSID := (*windows.SID)(unsafe.Pointer(&ace.SidStart))
-	if !aceSID.Equals(user.User.Sid) || ace.Mask&windows.GENERIC_ALL == 0 {
+	const fileAllAccess = windows.STANDARD_RIGHTS_REQUIRED | windows.SYNCHRONIZE | windows.ACCESS_MASK(0x1ff)
+	if !aceSID.Equals(user.User.Sid) || ace.Mask&fileAllAccess != fileAllAccess {
 		t.Fatalf("private path ACE is not current-user full control: %s", descriptor.String())
 	}
 }
