@@ -41,6 +41,12 @@ type ProcessIdentity struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+type PortIdentity struct {
+	Protocol string `json:"protocol"`
+	Address  string `json:"address"`
+	Number   int    `json:"number"`
+}
+
 type TaskEvent struct {
 	SchemaVersion      string           `json:"schema_version"`
 	TaskID             string           `json:"task_id"`
@@ -85,19 +91,22 @@ const (
 )
 
 type Candidate struct {
-	ID             string        `json:"id"`
-	Kind           CandidateKind `json:"kind"`
-	Path           string        `json:"path,omitempty"`
-	ObjectIdentity string        `json:"object_identity,omitempty"`
-	SizeBytes      int64         `json:"size_bytes,omitempty"`
-	EvidenceLevel  EvidenceLevel `json:"evidence_level"`
-	CurrentStatus  CurrentStatus `json:"current_status"`
-	Reason         string        `json:"reason,omitempty"`
-	Recommendation string        `json:"recommendation,omitempty"`
-	EventIDs       []string      `json:"event_ids,omitempty"`
-	ReceiptIDs     []string      `json:"receipt_ids,omitempty"`
-	Limitations    []string      `json:"limitations,omitempty"`
-	Conflicts      []string      `json:"conflicts,omitempty"`
+	ID             string           `json:"id"`
+	Kind           CandidateKind    `json:"kind"`
+	Path           string           `json:"path,omitempty"`
+	ObjectIdentity string           `json:"object_identity,omitempty"`
+	Process        *ProcessIdentity `json:"process,omitempty"`
+	ParentPID      int              `json:"parent_pid,omitempty"`
+	Port           *PortIdentity    `json:"port,omitempty"`
+	SizeBytes      int64            `json:"size_bytes,omitempty"`
+	EvidenceLevel  EvidenceLevel    `json:"evidence_level"`
+	CurrentStatus  CurrentStatus    `json:"current_status"`
+	Reason         string           `json:"reason,omitempty"`
+	Recommendation string           `json:"recommendation,omitempty"`
+	EventIDs       []string         `json:"event_ids,omitempty"`
+	ReceiptIDs     []string         `json:"receipt_ids,omitempty"`
+	Limitations    []string         `json:"limitations,omitempty"`
+	Conflicts      []string         `json:"conflicts,omitempty"`
 }
 
 type ReportStatus string

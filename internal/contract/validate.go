@@ -85,6 +85,18 @@ func (c Candidate) Validate() error {
 	if c.SizeBytes < 0 {
 		return errors.New("size_bytes cannot be negative")
 	}
+	if c.Process != nil && (c.Process.PID <= 0 || c.Process.CreatedAt.IsZero()) {
+		return errors.New("candidate process identity is invalid")
+	}
+	if c.ParentPID < 0 {
+		return errors.New("candidate parent_pid cannot be negative")
+	}
+	if c.Port != nil && (c.Port.Protocol != "tcp" || c.Port.Address == "" || c.Port.Number <= 0 || c.Port.Number > 65535) {
+		return errors.New("candidate port identity is invalid")
+	}
+	if (c.Kind == CandidateProcess && c.Process == nil) || (c.Kind == CandidatePort && (c.Process == nil || c.Port == nil)) {
+		return errors.New("process and port candidates require stable identities")
+	}
 	if len(c.EventIDs) > 128 || len(c.ReceiptIDs) > 128 {
 		return errors.New("candidate provenance exceeds size limit")
 	}

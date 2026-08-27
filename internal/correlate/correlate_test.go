@@ -8,12 +8,44 @@ import (
 	"github.com/fantasyce/agent-residue-evidence/internal/contract"
 	"github.com/fantasyce/agent-residue-evidence/internal/event"
 	"github.com/fantasyce/agent-residue-evidence/internal/fsobserve"
+	processobserve "github.com/fantasyce/agent-residue-evidence/internal/process"
 )
 
 func fileCandidate(path string, evidence contract.EvidenceLevel, status contract.CurrentStatus) contract.Candidate {
 	return contract.Candidate{
 		ID: "candidate-" + filepath.Base(path), Kind: contract.CandidateFile, Path: path,
 		EvidenceLevel: evidence, CurrentStatus: status, Recommendation: "review",
+	}
+}
+
+func TestAttributedProcessesAndOnlyTheirPortsBecomeCandidates(t *testing.T) {
+	created := time.Date(2026, 8, 27, 8, 30, 0, 0, time.UTC)
+	got, err := BuildReport(Input{
+		TaskID: "task-process",
+		Now:    time.Date(2026, 8, 27, 9, 0, 0, 0, time.UTC),
+		Processes: []processobserve.Evidence{{
+			Identity:  processobserve.Identity{PID: 123, CreatedAt: created},
+			ParentPID: 12,
+			Reason:    processobserve.AttributionReceipt,
+			Ports:     []processobserve.Port{{Protocol: "tcp", Address: "127.0.0.1", Number: 43210}},
+		}},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Candidates) != 2 {
+		t.Fatalf("candidates=%#v", got.Candidates)
+	}
+	processCandidate := got.Candidates[0]
+	portCandidate := got.Candidates[1]
+	if processCandidate.Kind != contract.CandidateProcess || processCandidate.Process == nil || processCandidate.Process.PID != 123 {
+		t.Fatalf("process=%#v", processCandidate)
+	}
+	if portCandidate.Kind != contract.CandidatePort || portCandidate.Port == nil || portCandidate.Port.Number != 43210 || portCandidate.Process == nil {
+		t.Fatalf("port=%#v", portCandidate)
+	}
+	if processCandidate.EvidenceLevel != contract.EvidenceReceiptBound || portCandidate.EvidenceLevel != contract.EvidenceReceiptBound {
+		t.Fatalf("evidence levels: %#v", got.Candidates)
 	}
 }
 
