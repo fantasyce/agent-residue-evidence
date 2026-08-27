@@ -1,0 +1,133 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  native:
+    name: Native package (${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            target: darwin_arm64
+            extension: tar.gz
+          - runner: ubuntu-24.04
+            target: linux_amd64
+            extension: tar.gz
+          - runner: windows-2025
+            target: windows_amd64
+            extension: zip
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: 1.27.x
+          cache-dependency-path: go.sum
+      - name: Verify exact main tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin main
+          version="$(tr -d '\r\n' < VERSION)"
+          test "$GITHUB_REF_NAME" = "v$version"
+          test "$(git rev-list -n 1 "$GITHUB_REF_NAME")" = "$(git rev-parse origin/main)"
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+      - name: Download verified dependencies
+        run: go mod download
+      - name: Native installed acceptance
+        shell: bash
+        run: bash scripts/run_native_acceptance.sh
+      - name: Privacy and no-network acceptance
+        shell: bash
+        run: bash scripts/run_privacy_acceptance.sh && bash scripts/run_no_network_acceptance.sh
+      - name: Build native package
+        shell: bash
+        env:
+          ARE_RELEASE_VERSION: 0.3.0
+          ARE_RELEASE_COMMIT: ${{ github.sha }}
+        run: bash scripts/build_release_assets.sh "$RUNNER_TEMP/native" '${{ matrix.target }}'
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-native-${{ matrix.target }}
+          path: ${{ runner.temp }}/native/agent-residue-evidence_0.3.0_${{ matrix.target }}.${{ matrix.extension }}
+          if-no-files-found: error
+          retention-days: 1
+      - name: Zero residue
+        shell: bash
+        run: bash scripts/verify_zero_residue.sh
+
+  assemble:
+    name: Assemble, verify, and attest
+    needs: native
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version: 1.27.x
+          cache-dependency-path: go.sum
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          pattern: release-native-*
+          path: ${{ runner.temp }}/dist
+          merge-multiple: true
+      - name: Build aggregate assets
+        shell: bash
+        env:
+          ARE_RELEASE_VERSION: 0.3.0
+          ARE_RELEASE_COMMIT: ${{ github.sha }}
+        run: |
+          go mod download
+          bash scripts/build_release_assets.sh "$RUNNER_TEMP/dist" linux_amd64
+          bash scripts/verify_release_assets.sh "$RUNNER_TEMP/dist" 0.3.0 "$GITHUB_SHA"
+          python3 scripts/verify_registry_metadata.py +            --server "$RUNNER_TEMP/dist/server.json" +            --mcpb "$RUNNER_TEMP/dist/agent-residue-evidence_0.3.0.mcpb" +            --version 0.3.0
+      - uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: '${{ runner.temp }}/dist/*'
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: agent-residue-evidence-v0.3.0
+          path: ${{ runner.temp }}/dist/*
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: Publish verified release
+    needs: assemble
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@70fc10c6e5e1ce46ad2ea6f2b72d43f7d47b13c3 # v8.0.0
+        with:
+          name: agent-residue-evidence-v0.3.0
+          path: dist
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: gh release create "$GITHUB_REF_NAME" dist/* --verify-tag --title "Agent Residue Evidence $(cat VERSION)" --generate-notes

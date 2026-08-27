@@ -4,9 +4,9 @@ ARE is distributed as native archives for macOS arm64, Linux amd64, and
 Windows 11 amd64, plus a cross-platform MCPB. It runs fully locally and does
 not download code at first launch.
 
-The current release is `0.2.0`; asset names start with
-`agent-residue-evidence_0.2.0_`, and the bundle is
-`agent-residue-evidence_0.2.0.mcpb`.
+The current release is `0.3.0`; asset names start with
+`agent-residue-evidence_0.3.0_`, and the bundle is
+`agent-residue-evidence_0.3.0.mcpb`.
 
 ## Verify before installing
 

@@ -14,7 +14,7 @@ cleanup() {
   case "$test_root" in "$task_base"/are-install-test.*) find "$test_root" -depth -delete 2>/dev/null || true ;; *) return 1 ;; esac
 }
 trap cleanup EXIT INT TERM
-version=0.2.0; commit="$(git -C "$repo_dir" rev-parse HEAD)"
+version=0.3.0; commit="$(git -C "$repo_dir" rev-parse HEAD)"
 mkdir -p "$test_root/dist"
 ARE_RELEASE_VERSION="$version" ARE_RELEASE_COMMIT="$commit" bash "$script_dir/build_release_assets.sh" "$test_root/dist" darwin_arm64
 candidate="$test_root/dist/agent-residue-evidence_${version}_darwin_arm64.tar.gz"

@@ -7,7 +7,7 @@ task_base="${TMPDIR:-/tmp}"; task_base="${task_base%/}"
 test_root="$(mktemp -d "$task_base/are-packaging-test.XXXXXX")"
 cleanup() { case "$test_root" in "$task_base"/are-packaging-test.*) find "$test_root" -depth -delete 2>/dev/null || true ;; *) return 1 ;; esac; }
 trap cleanup EXIT INT TERM
-version=0.2.0
+version=0.3.0
 commit="$(git -C "$repo_dir" rev-parse HEAD)"
 mkdir -p "$test_root/dist-one" "$test_root/dist-two"
 ARE_RELEASE_VERSION="$version" ARE_RELEASE_COMMIT="$commit" bash "$script_dir/build_release_assets.sh" "$test_root/dist-one" darwin_arm64

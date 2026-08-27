@@ -67,6 +67,8 @@ with zipfile.ZipFile(bundle) as archive:
 registry = json.loads((dist / "server.json").read_text())
 package = registry["packages"][0]
 assert registry["version"] == version and package["version"] == version
+assert registry["websiteUrl"] == "https://fantasyce.github.io/agent-residue-evidence/"
+assert registry["repository"] == {"id":"1348411114","source":"github","url":"https://github.com/fantasyce/agent-residue-evidence"}
 assert package["fileSha256"] == hashlib.sha256(bundle.read_bytes()).hexdigest()
 assert package["transport"] == {"type":"stdio"}
 sbom = json.loads((dist / "sbom.spdx.json").read_text())

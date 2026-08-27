@@ -12,7 +12,7 @@ trap cleanup EXIT INT TERM
 
 case "${go_os}_${go_arch}" in darwin_arm64|linux_amd64|windows_amd64) ;; *) echo "unsupported native host: ${go_os}/${go_arch}" >&2; exit 1 ;; esac
 native_path() { if [[ "$go_os" == windows ]]; then cygpath -m "$1"; else printf '%s\n' "$1"; fi; }
-commit="$(git -C "$repo_dir" rev-parse HEAD)"; version=0.2.0
+commit="$(git -C "$repo_dir" rev-parse HEAD)"; version=0.3.0
 binary="$test_root/agent-residue-evidence"; [[ "$go_os" == windows ]] && binary="$binary.exe"
 GOPROXY=off GOSUMDB=off go build -C "$repo_dir" -trimpath \
   -ldflags "-s -w -X github.com/fantasyce/agent-residue-evidence/internal/versioninfo.Version=$version -X github.com/fantasyce/agent-residue-evidence/internal/versioninfo.Commit=$commit" \

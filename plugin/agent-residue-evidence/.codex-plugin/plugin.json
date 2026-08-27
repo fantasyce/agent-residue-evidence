@@ -1,6 +1,6 @@
 {
   "name": "agent-residue-evidence",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Local task-scoped residue evidence for Agent testing and build workflows",
   "author": {
     "name": "Agent Residue Evidence contributors"
