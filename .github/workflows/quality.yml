@@ -1,0 +1,73 @@
+name: quality
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  source:
+    strategy:
+      fail-fast: false
+      matrix:
+        go: ["1.26.x", "1.27.x"]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ matrix.go }}
+          cache: true
+      - run: bash scripts/check.sh
+      - run: bash scripts/run_privacy_acceptance.sh
+
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            target: darwin_arm64
+          - runner: ubuntu-24.04
+            target: linux_amd64
+          - runner: windows-2025
+            target: windows_amd64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version: "1.27.x"
+          cache: true
+      - name: Seed sanitized failure summary
+        shell: bash
+        run: printf '{"schema_version":"are-native-acceptance/1.0","target":"%s","result":"INCOMPLETE"}\n' '${{ matrix.target }}' > "$RUNNER_TEMP/are-native-summary.json"
+      - name: Native installed acceptance
+        shell: bash
+        env:
+          ARE_ACCEPTANCE_SUMMARY: ${{ runner.temp }}/are-native-summary.json
+        run: bash scripts/run_native_acceptance.sh
+      - name: Privacy and no-network acceptance
+        shell: bash
+        run: bash scripts/run_privacy_acceptance.sh && bash scripts/run_no_network_acceptance.sh
+      - name: Native package build
+        shell: bash
+        env:
+          ARE_RELEASE_VERSION: 0.1.0
+          ARE_RELEASE_COMMIT: ${{ github.sha }}
+        run: bash scripts/build_release_assets.sh "$RUNNER_TEMP/are-dist" '${{ matrix.target }}'
+      - name: Zero residue
+        shell: bash
+        run: bash scripts/verify_zero_residue.sh
+      - name: Upload sanitized failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-summary-${{ matrix.target }}
+          path: ${{ runner.temp }}/are-native-summary.json
+          if-no-files-found: error
+          retention-days: 7
