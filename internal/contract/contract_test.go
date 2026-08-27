@@ -7,14 +7,14 @@ import (
 )
 
 func TestDecodeTaskEventRejectsRawCommand(t *testing.T) {
-	raw := []byte(`{"schema_version":"agent-task-event/1.0","task_id":"task-1","event_id":"event-1","type":"command_started","timestamp":"2026-08-27T00:00:00Z","command":"printenv"}`)
+	raw := []byte(`{"schema_version":"agent-task-event/2.0","task_id":"task-1","event_id":"event-1","type":"command_started","timestamp":"2026-08-27T00:00:00Z","command":"printenv"}`)
 	if _, err := DecodeTaskEvent(raw); err == nil || !strings.Contains(err.Error(), "unknown field") {
 		t.Fatalf("expected unknown command field error, got %v", err)
 	}
 }
 
 func TestDecodeTaskEventRejectsUnknownField(t *testing.T) {
-	raw := []byte(`{"schema_version":"agent-task-event/1.0","task_id":"task-1","event_id":"event-1","type":"artifact_declared","timestamp":"2026-08-27T00:00:00Z","mystery":true}`)
+	raw := []byte(`{"schema_version":"agent-task-event/2.0","task_id":"task-1","event_id":"event-1","type":"artifact_declared","timestamp":"2026-08-27T00:00:00Z","mystery":true}`)
 	if _, err := DecodeTaskEvent(raw); err == nil || !strings.Contains(err.Error(), "unknown field") {
 		t.Fatalf("expected unknown field error, got %v", err)
 	}

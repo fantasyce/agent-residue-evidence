@@ -16,7 +16,7 @@ func TestEncryptedEnvelopeRoundTripHasNoPlaintext(t *testing.T) {
 	secret := struct {
 		TaskID string `json:"task_id"`
 		Path   string `json:"path"`
-	}{TaskID: "goalboard-private-task", Path: "/Users/private/GoalBoard/build.log"}
+	}{TaskID: "private-task-marker", Path: "/var/tmp/example-workspace/build.log"}
 	envelope, err := sealRecord("task", "opaque-record", 0, time.Now().UTC(), time.Now().UTC().Add(time.Hour), "", false, key, secret)
 	if err != nil {
 		t.Fatal(err)

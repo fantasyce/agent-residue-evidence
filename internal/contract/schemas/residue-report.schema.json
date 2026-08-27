@@ -6,9 +6,10 @@
   "additionalProperties": false,
   "required": ["schema_version", "report_id", "task_id", "status", "created_at", "candidates"],
   "properties": {
-    "schema_version": {"const": "agent-residue-report/1.0"},
+    "schema_version": {"const": "agent-residue-report/2.0"},
     "report_id": {"type": "string", "minLength": 1, "maxLength": 256},
     "task_id": {"type": "string", "minLength": 1, "maxLength": 256},
+    "observation_mode": {"enum": ["MANAGED", "GUIDED", "RETROSPECTIVE"]},
     "status": {"enum": ["NO_CANDIDATES_OBSERVED", "REVIEW_REQUIRED", "PARTIAL_EVIDENCE", "INTERRUPTED_TASK", "OBSERVATION_FAILED"]},
     "created_at": {"type": "string", "format": "date-time"},
     "verified_at": {"type": "string", "format": "date-time"},
@@ -38,6 +39,22 @@
         }
       }
     },
-    "limitations": {"type": "array", "items": {"type": "string"}}
+    "limitations": {"type": "array", "items": {"type": "string"}},
+    "verification_revisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["revision", "created_at", "previous_digest", "digest", "candidates"],
+        "properties": {
+          "revision": {"type": "integer", "minimum": 1},
+          "created_at": {"type": "string", "format": "date-time"},
+          "previous_digest": {"type": "string"},
+          "digest": {"type": "string"},
+          "candidates": {"type": "array"},
+          "limitations": {"type": "array", "items": {"type": "string"}}
+        }
+      }
+    }
   }
 }

@@ -56,7 +56,7 @@ with zipfile.ZipFile(bundle) as archive:
     assert manifest["manifest_version"] == "0.3" and manifest["version"] == version
     assert manifest["license"] == "Apache-2.0"
     assert manifest["compatibility"]["platforms"] == ["darwin", "linux", "win32"]
-    assert len(manifest["tools"]) == 6
+    assert len(manifest["tools"]) == 8
     assert "permissions" not in manifest and manifest["server"]["mcp_config"]["env"] == {}
     assert archive.read("server/agent-residue-evidence-darwin-arm64") == binary_bytes["darwin_arm64"]
     assert archive.read("server/agent-residue-evidence-linux-amd64") == binary_bytes["linux_amd64"]

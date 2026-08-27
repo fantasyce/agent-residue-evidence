@@ -4,9 +4,9 @@ ARE is distributed as native archives for macOS arm64, Linux amd64, and
 Windows 11 amd64, plus a cross-platform MCPB. It runs fully locally and does
 not download code at first launch.
 
-The first release is `0.1.0`; asset names start with
-`agent-residue-evidence_0.1.0_`, and the bundle is
-`agent-residue-evidence_0.1.0.mcpb`.
+The current release is `0.2.0`; asset names start with
+`agent-residue-evidence_0.2.0_`, and the bundle is
+`agent-residue-evidence_0.2.0.mcpb`.
 
 ## Verify before installing
 
@@ -21,7 +21,7 @@ install an archive whose target, version, checksum, or provenance differs.
 Extract into a new staging directory owned by the user. Verify
 `provenance.json`, the binary SHA-256, the Plugin manifest SHA-256, executable
 mode, `agent-residue-evidence --version`, `doctor`, MCP `initialize`, and the
-six-tool `tools/list` response. Stop or drain an older ARE MCP process before
+eight-tool `tools/list` response. Stop or drain an older ARE MCP process before
 atomically replacing the current program, Plugin configuration, and
 provenance together. Keep the previous verified directory as a rollback slot
 until the new MCP reconnect succeeds.

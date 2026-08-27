@@ -28,6 +28,8 @@ required = {
     "inspect_completed_task",
     "get_residue_report",
     "verify_task_residue",
+    "delegate_task_executor",
+    "resolve_residue_candidate",
 }
 missing = sorted(name for name in required if name not in skill)
 assert not missing, f"skill missing tools: {missing}"

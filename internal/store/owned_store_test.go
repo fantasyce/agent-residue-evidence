@@ -28,10 +28,10 @@ func TestOwnedTaskStateIsOpaqueAndOwnerIsRequired(t *testing.T) {
 	baseline := fsobserve.Baseline{
 		CapturedAt: time.Now().UTC(),
 		Scope: scope.Validated{TaskID: "goalboard-private-task", Roots: []scope.Root{{
-			Path: "/Users/private/GoalBoard", Identity: "root-identity",
+			Path: "/var/tmp/example-workspace", Identity: "root-identity",
 		}}},
 		Entries: map[string]fsobserve.Entry{
-			"private": {Path: "/Users/private/GoalBoard/build.log", Kind: "file"},
+			"private": {Path: "/var/tmp/example-workspace/build.log", Kind: "file"},
 		},
 	}
 	if err := state.CreateOwnedTask(context.Background(), owner.String(), "goalboard-private-task", baseline); err != nil {

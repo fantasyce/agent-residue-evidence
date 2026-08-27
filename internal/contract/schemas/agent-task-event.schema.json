@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["schema_version", "task_id", "event_id", "type", "timestamp"],
   "properties": {
-    "schema_version": {"const": "agent-task-event/1.0"},
+    "schema_version": {"const": "agent-task-event/2.0"},
     "task_id": {"type": "string", "minLength": 1, "maxLength": 256},
     "event_id": {"type": "string", "minLength": 1, "maxLength": 256},
     "type": {"enum": ["command_started", "command_completed", "process_started", "process_exited", "artifact_declared", "test_phase_started", "test_phase_completed", "cleanup_attempted"]},

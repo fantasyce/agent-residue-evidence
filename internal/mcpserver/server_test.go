@@ -138,6 +138,48 @@ func TestReportIDAloneAndWrongOwnerCannotAccessAnotherTask(t *testing.T) {
 	}
 }
 
+func TestPublicIdentifiersNeverAuthorizeCrossTaskOperations(t *testing.T) {
+	root := t.TempDir()
+	client := testClient(t, testService(t))
+	begin, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: "begin_task_observation", Arguments: map[string]any{"task_id": "task-a", "workspace": root}})
+	if err != nil || begin.IsError {
+		t.Fatalf("begin=%#v err=%v", begin, err)
+	}
+	var begun app.BeginResult
+	decodeStructured(t, begin.StructuredContent, &begun)
+	if err := os.WriteFile(filepath.Join(root, "private.log"), nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	ended, err := client.CallTool(context.Background(), &mcp.CallToolParams{Name: "end_task_observation", Arguments: map[string]any{"owner_handle": begun.OwnerHandle}})
+	if err != nil || ended.IsError {
+		t.Fatalf("end=%#v err=%v", ended, err)
+	}
+	var summary app.ReportSummary
+	decodeStructured(t, ended.StructuredContent, &summary)
+	candidateID := ""
+	if len(summary.Candidates) > 0 {
+		candidateID = summary.Candidates[0].ID
+	}
+	attacks := []struct {
+		name string
+		args map[string]any
+	}{
+		{"append_task_events", map[string]any{"observation_id": begun.ObservationID, "events": []any{}}},
+		{"end_task_observation", map[string]any{"observation_id": begun.ObservationID}},
+		{"get_residue_report", map[string]any{"report_id": summary.ReportID}},
+		{"verify_task_residue", map[string]any{"report_id": summary.ReportID}},
+		{"delegate_task_executor", map[string]any{"report_id": summary.ReportID, "expires_at": time.Now().Add(time.Minute), "allowed_event_types": []any{"artifact_declared"}, "allowed_root_aliases": []any{"workspace://"}}},
+		{"resolve_residue_candidate", map[string]any{"report_id": summary.ReportID, "candidate_id": candidateID}},
+		{"inspect_completed_task", map[string]any{"grant_handle": summary.ReportID, "events": []any{}}},
+	}
+	for _, attack := range attacks {
+		result, callErr := client.CallTool(context.Background(), &mcp.CallToolParams{Name: attack.name, Arguments: attack.args})
+		if callErr == nil && (result == nil || !result.IsError) {
+			t.Fatalf("%s accepted public identifiers: %#v", attack.name, result)
+		}
+	}
+}
+
 func TestEphemeralObservationStaysInSessionAndCannotResumeAfterRestart(t *testing.T) {
 	root := t.TempDir()
 	home := t.TempDir()
