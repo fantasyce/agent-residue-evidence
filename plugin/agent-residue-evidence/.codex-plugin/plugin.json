@@ -1,0 +1,19 @@
+{
+  "name": "agent-residue-evidence",
+  "version": "0.1.0",
+  "description": "Local task-scoped residue evidence for Agent testing and build workflows",
+  "author": {
+    "name": "Agent Residue Evidence contributors"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Agent Residue Evidence",
+    "shortDescription": "Show task-scoped test and build residue without cleaning it.",
+    "longDescription": "Observe explicit task roots locally, give the Agent an evidence list after tests or builds, and verify the same stable candidates after user-authorized cleanup. The plugin never deletes files, stops processes, closes ports, scans the whole machine, or uses the network.",
+    "developerName": "Agent Residue Evidence contributors",
+    "category": "Developer Tools",
+    "capabilities": [],
+    "defaultPrompt": "Observe residue for this testing or build task, present evidence for review, and verify only after I authorize and the Agent performs any cleanup."
+  },
+  "mcpServers": "./.mcp.json"
+}

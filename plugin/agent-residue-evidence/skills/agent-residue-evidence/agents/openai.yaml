@@ -1,0 +1,3 @@
+interface:
+  display_name: "Agent Residue Evidence"
+  short_description: "Review local task residue without automatic cleanup"

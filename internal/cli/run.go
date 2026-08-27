@@ -13,6 +13,7 @@ import (
 
 	"github.com/fantasyce/agent-residue-evidence/internal/app"
 	"github.com/fantasyce/agent-residue-evidence/internal/contract"
+	"github.com/fantasyce/agent-residue-evidence/internal/mcpserver"
 	"github.com/fantasyce/agent-residue-evidence/internal/store"
 	"github.com/fantasyce/agent-residue-evidence/internal/versioninfo"
 )
@@ -102,7 +103,10 @@ func Run(args []string, stdin io.Reader, stdout, stderr io.Writer) int {
 	case len(args) == 1 && args[0] == "doctor":
 		result = doctorResult{Healthy: true, Version: versioninfo.Version, StateHome: home, NetworkAccess: false, Telemetry: false}
 	case len(args) == 1 && args[0] == "mcp":
-		err = errors.New("MCP transport is not linked in this build stage")
+		if err := mcpserver.Run(contextBackground(), service); err != nil {
+			return fail(stderr, err)
+		}
+		return 0
 	default:
 		err = errors.New("usage: agent-residue-evidence begin|event append|end|inspect-completed|report get|report retain|report forget|verify|doctor|mcp|--version")
 		usageFailure = true
