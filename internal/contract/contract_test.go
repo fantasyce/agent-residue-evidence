@@ -7,14 +7,14 @@ import (
 )
 
 func TestDecodeTaskEventRejectsRawCommand(t *testing.T) {
-	raw := []byte(`{"schema_version":"agent-task-event/1.0","task_id":"task-1","event_id":"event-1","type":"command_started","timestamp":"2026-08-27T00:00:00Z","command":"printenv"}`)
+	raw := []byte(`{"schema_version":"agent-task-event/2.0","task_id":"task-1","event_id":"event-1","type":"command_started","timestamp":"2026-08-27T00:00:00Z","command":"printenv"}`)
 	if _, err := DecodeTaskEvent(raw); err == nil || !strings.Contains(err.Error(), "unknown field") {
 		t.Fatalf("expected unknown command field error, got %v", err)
 	}
 }
 
 func TestDecodeTaskEventRejectsUnknownField(t *testing.T) {
-	raw := []byte(`{"schema_version":"agent-task-event/1.0","task_id":"task-1","event_id":"event-1","type":"artifact_declared","timestamp":"2026-08-27T00:00:00Z","mystery":true}`)
+	raw := []byte(`{"schema_version":"agent-task-event/2.0","task_id":"task-1","event_id":"event-1","type":"artifact_declared","timestamp":"2026-08-27T00:00:00Z","mystery":true}`)
 	if _, err := DecodeTaskEvent(raw); err == nil || !strings.Contains(err.Error(), "unknown field") {
 		t.Fatalf("expected unknown field error, got %v", err)
 	}
@@ -66,5 +66,21 @@ func TestReportRejectsSafeDeleteRecommendation(t *testing.T) {
 	}
 	if err := report.Validate(); err == nil || !strings.Contains(err.Error(), "recommendation") {
 		t.Fatalf("expected recommendation rejection, got %v", err)
+	}
+}
+
+func TestTaskScopeValidatesObservationModeAndRecoveryProfile(t *testing.T) {
+	valid := TaskScope{TaskID: "display-task", Workspace: "/tmp/project", ObservationMode: ObservationGuided, RecoveryProfile: RecoveryRecoverable}
+	if err := valid.ValidateMetadata(); err != nil {
+		t.Fatal(err)
+	}
+	valid.ObservationMode = "AUTOMATIC_BUT_UNPROVEN"
+	if err := valid.ValidateMetadata(); err == nil {
+		t.Fatal("unknown observation mode accepted")
+	}
+	valid.ObservationMode = ObservationGuided
+	valid.RecoveryProfile = "GLOBAL_RECOVERY_KEY"
+	if err := valid.ValidateMetadata(); err == nil {
+		t.Fatal("unknown recovery profile accepted")
 	}
 }

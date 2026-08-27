@@ -12,7 +12,7 @@ trap cleanup EXIT INT TERM
 
 case "${go_os}_${go_arch}" in darwin_arm64|linux_amd64|windows_amd64) ;; *) echo "unsupported native host: ${go_os}/${go_arch}" >&2; exit 1 ;; esac
 native_path() { if [[ "$go_os" == windows ]]; then cygpath -m "$1"; else printf '%s\n' "$1"; fi; }
-commit="$(git -C "$repo_dir" rev-parse HEAD)"; version=0.1.0
+commit="$(git -C "$repo_dir" rev-parse HEAD)"; version=0.2.0
 binary="$test_root/agent-residue-evidence"; [[ "$go_os" == windows ]] && binary="$binary.exe"
 GOPROXY=off GOSUMDB=off go build -C "$repo_dir" -trimpath \
   -ldflags "-s -w -X github.com/fantasyce/agent-residue-evidence/internal/versioninfo.Version=$version -X github.com/fantasyce/agent-residue-evidence/internal/versioninfo.Commit=$commit" \
@@ -24,24 +24,28 @@ export ARE_HOME="$(native_path "$test_root/state")"
 workspace="$test_root/workspace"; task_temp="$test_root/task-temp"; mkdir -p "$workspace" "$task_temp"
 workspace_native="$(native_path "$workspace")"; task_temp_native="$(native_path "$task_temp")"
 printf '{"task_id":"native-standard","workspace":"%s","temp_roots":["%s"]}\n' "$workspace_native" "$task_temp_native" | "$binary" begin > "$test_root/begin.json"
+owner_handle="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["owner_handle"])' "$test_root/begin.json")"
 mkdir -p "$workspace/generated"; printf 'ARE_PRIVATE_FIXTURE_DO_NOT_COPY' > "$workspace/generated/result.log"
 fingerprint="sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-printf '{"task_id":"native-standard","events":[{"schema_version":"agent-task-event/1.0","task_id":"native-standard","event_id":"artifact-1","type":"artifact_declared","timestamp":"2026-08-27T10:00:00Z","working_directory":"%s","command_fingerprint":"%s","declared_outputs":["%s"]}]}\n' "$workspace_native" "$fingerprint" "$(native_path "$workspace/generated/result.log")" | "$binary" event append > "$test_root/event.json"
-printf '{"task_id":"native-standard"}\n' | "$binary" end > "$test_root/end.json"
+printf '{"owner_handle":"%s","events":[{"schema_version":"agent-task-event/2.0","task_id":"native-standard","event_id":"artifact-1","type":"artifact_declared","timestamp":"2026-08-27T10:00:00Z","working_directory":"%s","command_fingerprint":"%s","declared_outputs":["%s"]}]}\n' "$owner_handle" "$workspace_native" "$fingerprint" "$(native_path "$workspace/generated/result.log")" | "$binary" event append > "$test_root/event.json"
+printf '{"owner_handle":"%s"}\n' "$owner_handle" | "$binary" end > "$test_root/end.json"
 
 # No-event prospective baseline remains a valid standard journey.
 empty="$test_root/empty"; mkdir -p "$empty"
-printf '{"task_id":"native-empty","workspace":"%s"}\n' "$(native_path "$empty")" | "$binary" begin >/dev/null
-printf '{"task_id":"native-empty"}\n' | "$binary" end > "$test_root/empty-report.json"
+printf '{"task_id":"native-empty","workspace":"%s"}\n' "$(native_path "$empty")" | "$binary" begin > "$test_root/empty-begin.json"
+empty_owner="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["owner_handle"])' "$test_root/empty-begin.json")"
+printf '{"owner_handle":"%s"}\n' "$empty_owner" | "$binary" end > "$test_root/empty-report.json"
 
 # Agent-owned cleanup occurs outside ARE, followed by candidate-only verify.
 report_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["report_id"])' "$test_root/end.json")"
 find "$workspace/generated" -depth -delete
-printf '{"report_id":"%s"}\n' "$report_id" | "$binary" verify > "$test_root/verified.json"
+printf '{"owner_handle":"%s","report_id":"%s"}\n' "$owner_handle" "$report_id" | "$binary" verify > "$test_root/verified.json"
 
 # Retrospective inspection must remain downgraded and partial.
 historical="$test_root/historical"; mkdir -p "$historical"; touch "$historical/old.log"
-printf '{"scope":{"task_id":"native-retrospective","workspace":"%s"},"started_at":"2020-01-01T00:00:00Z","ended_at":"2030-01-01T00:00:00Z","events":[]}\n' "$(native_path "$historical")" | "$binary" inspect-completed > "$test_root/retrospective.json"
+printf '{"scope":{"task_id":"native-retrospective","workspace":"%s"},"started_at":"2020-01-01T00:00:00Z","ended_at":"2030-01-01T00:00:00Z","events":[]}\n' "$(native_path "$historical")" | "$binary" grant retrospective > "$test_root/grant.json"
+grant_handle="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["grant_handle"])' "$test_root/grant.json")"
+printf '{"grant_handle":"%s","events":[]}\n' "$grant_handle" | "$binary" inspect-completed > "$test_root/retrospective.json"
 
 python3 - "$test_root" <<'PY'
 import json, pathlib, sys
@@ -65,7 +69,7 @@ for _ in range(2):
         p.stdin.write(json.dumps(request)+'\n'); p.stdin.flush()
     while True:
         response=json.loads(p.stdout.readline())
-        if response.get('id') == 2: assert len(response['result']['tools']) == 6; break
+        if response.get('id') == 2: assert len(response['result']['tools']) == 8; break
     p.stdin.close(); assert p.wait(timeout=5)==0 and p.stderr.read()==''
 PY
 

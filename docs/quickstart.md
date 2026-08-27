@@ -10,12 +10,15 @@ agent-residue-evidence begin <<'JSON'
 JSON
 ```
 
+Keep the returned `owner_handle` in the active Agent task only. Public task,
+observation, report, and candidate IDs cannot replace it.
+
 Run the task's tests or build. Events are optional. End observation before the
 Agent's final response:
 
 ```bash
 agent-residue-evidence end <<'JSON'
-{"task_id":"example-test"}
+{"owner_handle":"owner-handle-from-begin"}
 JSON
 ```
 
@@ -25,10 +28,11 @@ own tools and then verifies:
 
 ```bash
 agent-residue-evidence verify <<'JSON'
-{"report_id":"report-from-the-end-response"}
+{"owner_handle":"owner-handle-from-begin"}
 JSON
 ```
 
-For a completed historical task, use `inspect-completed` with explicit roots
-and a bounded time window. The resulting partial evidence cannot establish
-what existed before the task.
+For a completed historical task, first use the local CLI `grant retrospective`
+with explicit roots and a bounded time window, then pass its single-use,
+ten-minute grant to `inspect-completed`. The resulting partial evidence cannot
+establish what existed before the task.

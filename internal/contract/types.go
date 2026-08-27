@@ -1,11 +1,29 @@
 package contract
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 const (
-	EventSchemaVersion  = "agent-task-event/1.0"
-	ReportSchemaVersion = "agent-residue-report/1.0"
-	LifecycleVersion    = "agent-residue-lifecycle/1.0"
+	EventSchemaVersion  = "agent-task-event/2.0"
+	ReportSchemaVersion = "agent-residue-report/2.0"
+	LifecycleVersion    = "agent-residue-lifecycle/2.0"
+)
+
+type ObservationMode string
+
+const (
+	ObservationManaged       ObservationMode = "MANAGED"
+	ObservationGuided        ObservationMode = "GUIDED"
+	ObservationRetrospective ObservationMode = "RETROSPECTIVE"
+)
+
+type RecoveryProfile string
+
+const (
+	RecoveryRecoverable RecoveryProfile = "RECOVERABLE"
+	RecoveryEphemeral   RecoveryProfile = "EPHEMERAL"
 )
 
 type TaskState string
@@ -31,9 +49,21 @@ const (
 )
 
 type TaskScope struct {
-	TaskID    string   `json:"task_id"`
-	Workspace string   `json:"workspace"`
-	TempRoots []string `json:"temp_roots,omitempty"`
+	TaskID          string          `json:"task_id"`
+	Workspace       string          `json:"workspace"`
+	TempRoots       []string        `json:"temp_roots,omitempty"`
+	ObservationMode ObservationMode `json:"observation_mode,omitempty"`
+	RecoveryProfile RecoveryProfile `json:"recovery_profile,omitempty"`
+}
+
+func (scope TaskScope) ValidateMetadata() error {
+	if scope.ObservationMode != "" && scope.ObservationMode != ObservationManaged && scope.ObservationMode != ObservationGuided && scope.ObservationMode != ObservationRetrospective {
+		return fmt.Errorf("invalid observation mode %q", scope.ObservationMode)
+	}
+	if scope.RecoveryProfile != "" && scope.RecoveryProfile != RecoveryRecoverable && scope.RecoveryProfile != RecoveryEphemeral {
+		return fmt.Errorf("invalid recovery profile %q", scope.RecoveryProfile)
+	}
+	return nil
 }
 
 type ProcessIdentity struct {
@@ -48,7 +78,7 @@ type PortIdentity struct {
 }
 
 type TaskEvent struct {
-	SchemaVersion      string           `json:"schema_version"`
+	SchemaVersion      string           `json:"schema_version" jsonschema:"must equal agent-task-event/2.0"`
 	TaskID             string           `json:"task_id"`
 	EventID            string           `json:"event_id"`
 	Type               EventType        `json:"type"`
@@ -120,12 +150,39 @@ const (
 )
 
 type Report struct {
-	SchemaVersion string       `json:"schema_version"`
-	ReportID      string       `json:"report_id"`
-	TaskID        string       `json:"task_id"`
-	Status        ReportStatus `json:"status"`
-	CreatedAt     time.Time    `json:"created_at"`
-	VerifiedAt    *time.Time   `json:"verified_at,omitempty"`
-	Candidates    []Candidate  `json:"candidates"`
-	Limitations   []string     `json:"limitations,omitempty"`
+	SchemaVersion   string          `json:"schema_version"`
+	ReportID        string          `json:"report_id"`
+	TaskID          string          `json:"task_id"`
+	ObservationMode ObservationMode `json:"observation_mode,omitempty"`
+	Status          ReportStatus    `json:"status"`
+	CreatedAt       time.Time       `json:"created_at"`
+	VerifiedAt      *time.Time      `json:"verified_at,omitempty"`
+	Candidates      []Candidate     `json:"candidates"`
+	Limitations     []string        `json:"limitations,omitempty"`
+}
+
+type VerificationRevision struct {
+	Revision       int         `json:"revision"`
+	CreatedAt      time.Time   `json:"created_at"`
+	PreviousDigest string      `json:"previous_digest"`
+	Digest         string      `json:"digest"`
+	Candidates     []Candidate `json:"candidates"`
+	Limitations    []string    `json:"limitations,omitempty"`
+}
+
+type CandidateGroup struct {
+	ID                 string        `json:"id"`
+	Kind               CandidateKind `json:"kind"`
+	Path               string        `json:"path,omitempty"`
+	EvidenceLevel      EvidenceLevel `json:"evidence_level"`
+	CurrentStatus      CurrentStatus `json:"current_status"`
+	DescendantCount    int           `json:"descendant_count"`
+	AggregateSizeBytes int64         `json:"aggregate_size_bytes"`
+	SamplePaths        []string      `json:"sample_paths,omitempty"`
+}
+
+type CandidatePage struct {
+	Items      []CandidateGroup `json:"items"`
+	Total      int              `json:"total"`
+	NextCursor string           `json:"next_cursor,omitempty"`
 }

@@ -62,14 +62,14 @@ jobs:
       - name: Native package build
         shell: bash
         env:
-          ARE_RELEASE_VERSION: 0.1.0
+          ARE_RELEASE_VERSION: 0.2.0
           ARE_RELEASE_COMMIT: ${{ github.sha }}
         run: bash scripts/build_release_assets.sh "$RUNNER_TEMP/are-dist" '${{ matrix.target }}'
       - name: Upload native release package
         uses: actions/upload-artifact@v7
         with:
           name: native-package-${{ matrix.target }}
-          path: ${{ runner.temp }}/are-dist/agent-residue-evidence_0.1.0_${{ matrix.target }}.${{ matrix.extension }}
+          path: ${{ runner.temp }}/are-dist/agent-residue-evidence_0.2.0_${{ matrix.target }}.${{ matrix.extension }}
           if-no-files-found: error
           retention-days: 1
       - name: Zero residue

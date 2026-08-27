@@ -28,9 +28,13 @@ required = {
     "inspect_completed_task",
     "get_residue_report",
     "verify_task_residue",
+    "delegate_task_executor",
+    "resolve_residue_candidate",
 }
 missing = sorted(name for name in required if name not in skill)
 assert not missing, f"skill missing tools: {missing}"
 for forbidden in ("automatic deletion", "full-disk scope", "environment values", "conversation transcripts"):
     assert forbidden in skill, f"skill missing boundary: {forbidden}"
+for required_instruction in ("agent-task-event/2.0", "executor_handle", "owner_handle"):
+    assert required_instruction in skill, f"skill missing capability instruction: {required_instruction}"
 PY

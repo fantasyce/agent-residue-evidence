@@ -29,7 +29,9 @@
     {"name": "end_task_observation", "description": "End observation and return residue candidates for review."},
     {"name": "inspect_completed_task", "description": "Perform bounded retrospective inspection without claiming baseline evidence."},
     {"name": "get_residue_report", "description": "Read one stored local residue report."},
-    {"name": "verify_task_residue", "description": "Recheck only stable candidates already present in a report."}
+    {"name": "verify_task_residue", "description": "Recheck only stable candidates already present in a report."},
+    {"name": "delegate_task_executor", "description": "Mint a short-lived append-only task executor capability."},
+    {"name": "resolve_residue_candidate", "description": "Resolve one authorized candidate alias to its exact local path."}
   ],
   "keywords": ["agent", "mcp", "testing", "build residue", "local evidence"],
   "license": "Apache-2.0",

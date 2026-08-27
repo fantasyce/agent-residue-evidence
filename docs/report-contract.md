@@ -1,6 +1,6 @@
 # Residue report contract
 
-Reports use `agent-residue-report/1.0`. Status is one of:
+Reports use `agent-residue-report/2.0`. Status is one of:
 
 - `NO_CANDIDATES_OBSERVED`
 - `REVIEW_REQUIRED`
@@ -16,9 +16,11 @@ limitations/conflicts, and only the recommendation `review`.
 Evidence strength is `BASELINE_OBSERVED`, `RECEIPT_BOUND`, `EVENT_BOUND`,
 `INFERRED`, or `UNATTRIBUTED`. Current state is `PRESENT`,
 `ACTIVE_REFERENCE`, `NO_LONGER_PRESENT`, `CHANGED_SINCE_REPORT`, or `UNKNOWN`.
-Verification rechecks only report candidates by stable identity and records
-`verified_at`; it does not widen the original scan.
+Verification rechecks only report candidates by stable identity and appends an
+immutable, digest-chained revision; it does not widen or rewrite the original
+report.
 
-Exact local paths are retained to support local review. Do not publish raw
-reports without deliberate redaction. `NO_CANDIDATES_OBSERVED` is limited to
+Stored state is encrypted and public reports use root aliases. Exact local
+paths require the same owner capability and an explicit candidate resolution.
+Do not publish capabilities or resolved paths. `NO_CANDIDATES_OBSERVED` is limited to
 the declared task roots and available evidence.

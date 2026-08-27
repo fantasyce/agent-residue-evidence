@@ -33,7 +33,14 @@ The result is always `PARTIAL_EVIDENCE`; it can use Event, receipt, inferred,
 or unattributed evidence, but never claims `BASELINE_OBSERVED`. Use
 `get_residue_report` to read a saved report without observing again.
 
-The MCP surface contains exactly six tools:
+Every observation is isolated by an opaque owner capability. Task IDs, report
+IDs, observation IDs, and candidate IDs are display references only and never
+authorize access. State is encrypted at rest with opaque filenames; exact
+paths are revealed only through an authorized candidate-resolution call.
+Short-lived executor capabilities can append only explicitly allowed event
+types and root aliases and cannot read, end, verify, or resolve a task.
+
+The MCP surface contains exactly eight tools:
 
 - `begin_task_observation`
 - `append_task_events`
@@ -41,6 +48,8 @@ The MCP surface contains exactly six tools:
 - `inspect_completed_task`
 - `get_residue_report`
 - `verify_task_residue`
+- `delegate_task_executor`
+- `resolve_residue_candidate`
 
 There is deliberately no cleanup, delete, execute, terminate, or close tool.
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.0 - 2026-08-27
+
+- Isolate every task and report behind an opaque owner capability; public IDs no longer authorize access.
+- Encrypt task, event, grant, and report state at rest with opaque filenames and authenticated metadata.
+- Add recoverable and MCP-session-only ephemeral profiles plus explicit, single-use retrospective grants.
+- Add short-lived append-only executor delegation without exposing owner decryption authority.
+- Alias report paths, add authorized exact-path resolution, bounded grouping/pagination, and immutable verification revisions.
+- Expand the MCP surface to eight evidence-only tools and add cross-task denial, plaintext-state, retention, and capacity acceptance.
+
 ## 0.1.0 - 2026-08-27
 
 - Add prospective task-scoped filesystem, process, and attributed-port evidence.
