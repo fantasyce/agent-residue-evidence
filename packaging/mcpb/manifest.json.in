@@ -1,0 +1,38 @@
+{
+  "manifest_version": "0.3",
+  "name": "agent-residue-evidence",
+  "display_name": "Agent Residue Evidence",
+  "version": "@VERSION@",
+  "description": "Report local task-scoped test and build residue without cleaning resources.",
+  "long_description": "ARE records prospective task baselines or bounded retrospective evidence, reports files, directories, attributed processes, and their listening ports, and verifies the same candidates after user-authorized cleanup. It is fully local and has no cleanup or network capability.",
+  "author": {"name": "Agent Residue Evidence contributors", "url": "https://github.com/fantasyce/agent-residue-evidence"},
+  "repository": {"type": "git", "url": "https://github.com/fantasyce/agent-residue-evidence.git"},
+  "documentation": "https://github.com/fantasyce/agent-residue-evidence/blob/main/docs/install.md",
+  "support": "https://github.com/fantasyce/agent-residue-evidence/issues",
+  "icons": [{"src": "assets/icon.svg", "size": "128x128"}],
+  "server": {
+    "type": "binary",
+    "entry_point": "server/agent-residue-evidence-linux-amd64",
+    "mcp_config": {
+      "command": "server/agent-residue-evidence-linux-amd64",
+      "args": ["mcp"],
+      "env": {},
+      "platform_overrides": {
+        "darwin": {"command": "server/agent-residue-evidence-darwin-arm64", "args": ["mcp"]},
+        "win32": {"command": "server/agent-residue-evidence-windows-amd64.exe", "args": ["mcp"]}
+      }
+    }
+  },
+  "tools": [
+    {"name": "begin_task_observation", "description": "Begin evidence-only observation inside explicit task roots."},
+    {"name": "append_task_events", "description": "Append safe generic task events or an empty heartbeat."},
+    {"name": "end_task_observation", "description": "End observation and return residue candidates for review."},
+    {"name": "inspect_completed_task", "description": "Perform bounded retrospective inspection without claiming baseline evidence."},
+    {"name": "get_residue_report", "description": "Read one stored local residue report."},
+    {"name": "verify_task_residue", "description": "Recheck only stable candidates already present in a report."}
+  ],
+  "keywords": ["agent", "mcp", "testing", "build residue", "local evidence"],
+  "license": "Apache-2.0",
+  "compatibility": {"platforms": ["darwin", "linux", "win32"]},
+  "_meta": {"io.github.fantasyce.agent-residue-evidence": {"build": {"commit": "@COMMIT@"}}}
+}

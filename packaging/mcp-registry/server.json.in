@@ -1,0 +1,15 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.fantasyce/agent-residue-evidence",
+  "title": "Agent Residue Evidence",
+  "description": "Report local task-scoped test and build residue without cleaning resources.",
+  "version": "@VERSION@",
+  "repository": {"url": "https://github.com/fantasyce/agent-residue-evidence", "source": "github"},
+  "packages": [{
+    "registryType": "mcpb",
+    "identifier": "https://github.com/fantasyce/agent-residue-evidence/releases/download/v@VERSION@/agent-residue-evidence_@VERSION@.mcpb",
+    "version": "@VERSION@",
+    "fileSha256": "@MCPB_SHA256@",
+    "transport": {"type": "stdio"}
+  }]
+}
