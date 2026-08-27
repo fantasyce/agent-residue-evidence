@@ -3,7 +3,7 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 repo_dir="$(cd "$script_dir/.." && pwd -P)"
-for term in SHA256SUMS SBOM attestation macOS Linux Windows repair upgrade rollback uninstall; do
+for term in SHA256SUMS SBOM provenance macOS Linux Windows repair upgrade rollback uninstall; do
   grep -Eqi "$term" "$repo_dir/docs/install.md" || { echo "install guide missing: $term" >&2; exit 1; }
 done
 task_base="${TMPDIR:-/tmp}"; task_base="${task_base%/}"

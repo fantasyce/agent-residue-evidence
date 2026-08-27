@@ -10,7 +10,7 @@ source=(repo/'internal/versioninfo/version.go').read_text()
 assert re.search(r'Version\s*=\s*"'+re.escape(version)+r'"', source)
 plugin=json.loads((repo/'plugin/agent-residue-evidence/.codex-plugin/plugin.json').read_text())
 assert plugin['version'] == version
-assert f'## {version} - Unreleased' in (repo/'CHANGELOG.md').read_text()
+assert f'## {version} - 2026-08-27' in (repo/'CHANGELOG.md').read_text()
 assert version in (repo/'docs/install.md').read_text()
 manifest=(repo/'packaging/mcpb/manifest.json.in').read_text(); registry=(repo/'packaging/mcp-registry/server.json.in').read_text()
 assert '@VERSION@' in manifest and '@COMMIT@' in manifest

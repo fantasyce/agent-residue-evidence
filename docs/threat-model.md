@@ -19,5 +19,5 @@ ARE does not inspect containers or virtual machines, system users/services,
 browser profiles, Keychain/credential stores, shared caches, or remote hosts.
 It cannot prove that all task effects are absent. A malicious privileged local
 process, compromised kernel, or attacker able to rewrite the ARE binary/state
-is outside the runtime trust boundary; release checksums, provenance, SBOM, and
-attestation address distribution integrity, not a compromised host.
+is outside the runtime trust boundary; release checksums, packaged provenance,
+and the SBOM address distribution integrity, not a compromised host.

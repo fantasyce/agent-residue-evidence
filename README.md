@@ -52,10 +52,9 @@ checksums, provenance, and SPDX SBOM. See [Quickstart](docs/quickstart.md) and
 Reports default to seven-day retention and a 100 MB total cap; retained reports
 and active baselines are protected. Uninstall never silently deletes reports.
 
-Current local native acceptance is macOS 14+ arm64. Linux amd64 and Windows 11
-amd64 are release targets with mandatory native CI jobs; they remain pending
-until those jobs produce successful evidence. Cross-compilation alone is not
-reported as native acceptance.
+Native acceptance covers macOS 14+ arm64, Linux amd64, and Windows 11 amd64
+through mandatory native CI jobs. Cross-compilation alone is not reported as
+native acceptance.
 
 ## Development
 
