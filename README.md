@@ -65,12 +65,23 @@ checksums, provenance, and SPDX SBOM. See [Quickstart](docs/quickstart.md) and
 Reports default to seven-day retention and a 100 MB total cap; retained reports
 and active baselines are protected. Uninstall never silently deletes reports.
 
-The MCP Registry namespace is
-`io.github.fantasyce/agent-residue-evidence`.
+The current release is published in the
+[official MCP Registry](https://registry.modelcontextprotocol.io/v0.1/servers/io.github.fantasyce%2Fagent-residue-evidence/versions/0.3.0)
+as `io.github.fantasyce/agent-residue-evidence`.
 
 Native acceptance covers macOS 14+ arm64, Linux amd64, and Windows 11 amd64
 through mandatory native CI jobs. Cross-compilation alone is not reported as
 native acceptance.
+
+## Agent Reliability Toolkit
+
+ARE is one independent part of a small, local-first reliability toolkit:
+
+- [Agent Runtime Proof](https://github.com/fantasyce/agent-runtime-proof) verifies that a live Agent or MCP runtime matches the artifact you approved.
+- [Agent Residue Evidence](https://github.com/fantasyce/agent-residue-evidence) records task-scoped files, processes, and listening ports left by tests and builds.
+- [DSH TypeLens](https://github.com/fantasyce/dsh-typelens) adds bounded type context and edit diagnostics to DeepSeek Harness.
+
+Each project remains separately installable and keeps its own trust boundary.
 
 ## Development
 
