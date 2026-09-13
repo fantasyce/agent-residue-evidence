@@ -77,11 +77,21 @@ native acceptance.
 
 ARE is one independent part of a small, local-first reliability toolkit:
 
+- [Agent Recall Trail](https://github.com/fantasyce/agent-recall-trail) keeps private Agent memory separate from reviewed shared knowledge.
 - [Agent Runtime Proof](https://github.com/fantasyce/agent-runtime-proof) verifies that a live Agent or MCP runtime matches the artifact you approved.
 - [Agent Residue Evidence](https://github.com/fantasyce/agent-residue-evidence) records task-scoped files, processes, and listening ports left by tests and builds.
-- [DSH TypeLens](https://github.com/fantasyce/dsh-typelens) adds bounded type context and edit diagnostics to DeepSeek Harness.
 
 Each project remains separately installable and keeps its own trust boundary.
+
+## Community feedback
+
+Real Agent-host evaluations are especially useful. Share a synthetic or
+redacted workflow in the [design-partner issue](https://github.com/fantasyce/agent-residue-evidence/issues/6),
+including the host and ARE version, declared observation scope, and observed
+result. DSH users can also join the
+[official community discussion](https://github.com/deepseek-ai/deepseek-harness/discussions/6479).
+Do not post credentials, private paths, raw command lines, environment values,
+proprietary code, or full transcripts.
 
 ## Development
 
